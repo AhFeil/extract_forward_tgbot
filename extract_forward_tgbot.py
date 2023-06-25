@@ -12,10 +12,7 @@
 24小时内会是占用时间，别人不可以再用  单独一个命令设置网址
 """
 
-import os
-import logging
 import sys
-import platform
 
 from telegram.ext import Updater
 from telegram import Update
@@ -24,30 +21,12 @@ from telegram.ext import CommandHandler, CallbackQueryHandler
 from telegram.ext import MessageHandler, Filters
 from telegram.ext import InlineQueryHandler
 
-from TgbotBehavior import transfer, clear, save_as_note, unknown, earliest_msg, sure_clear, delete_last_msg
+import config   # print(config.ENVIRONMENT)  # 打印ENVIRONMENT的值
+from tgbotBehavior import start, transfer, clear, save_as_note, unknown, earliest_msg, sure_clear, delete_last_msg
 
 
-system = platform.platform()
-if system == 'Windows-10-10.0.19044-SP0':
-    os.environ["http_proxy"] = "http://127.0.0.1:10809"
-    os.environ["https_proxy"] = "http://127.0.0.1:10809"
-elif system == 'Linux-5.10.0-20-amd64-x86_64-with-glibc2.31':
-    pass
-else:
-    print("where am I?")
-
-chat_id = '2082052804'
-bot_token = '5344378819:AAGG3r70tFwfiaUr1884TIzc8y5z2pY9xmY'
-manage_id = [chat_id, '1111111111']
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-
-updater = Updater(token=bot_token)
+updater = Updater(token=config.bot_token)
 dispatcher = updater.dispatcher
-
-
-# 回复固定内容
-def start(update: Update, context: CallbackContext):
-    context.bot.send_message(chat_id=update.effective_chat.id, text=f"I'm a bot in {system}, please talk to me!")
 
 
 # 类似路由，接收到 /start 执行哪个函数，
@@ -78,14 +57,14 @@ earliest_msg_handler = CommandHandler('emsg', earliest_msg)
 dispatcher.add_handler(earliest_msg_handler)
 
 
-# 显示最早的一条信息
+# 删除最新的一条信息
 delete_msg_handler = CommandHandler('dmsg', delete_last_msg)
 dispatcher.add_handler(delete_msg_handler)
 
 
-# 关闭机器人
+# 关闭机器人，这个只能在这，因为 updater 和 sys
 def shutdown(update: Update, context: CallbackContext):
-    if str(update.effective_chat.id) in manage_id:
+    if str(update.effective_chat.id) in config.manage_id:
         context.bot.send_message(chat_id=update.effective_chat.id, text="robot will shutdown immediately")
         updater.stop()
         sys.exit(0)
@@ -97,8 +76,7 @@ shutdown_handler = CommandHandler('shutdown', shutdown)
 dispatcher.add_handler(shutdown_handler)
 
 
-# 未知命令回复
-# 必须放到最后，会先判断前面的命令，都不是才会执行这个
+# 未知命令回复。必须放到最后，会先判断前面的命令，都不是才会执行这个
 unknown_handler = MessageHandler(Filters.command, unknown)
 dispatcher.add_handler(unknown_handler)
 

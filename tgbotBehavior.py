@@ -2,16 +2,22 @@
 tg机器人的所有命令行为（除了start）
 查 需要改
 """
-import os
 import datetime
-import platform
 import re
 from time import time,localtime,strftime
+import os
 
 from telegram import Update
 from telegram.ext import CallbackContext, ContextTypes
 from telegram import InlineQueryResultArticle, InputTextMessageContent
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
+import config
+
+
+# 回复固定内容
+def start(update: Update, context: CallbackContext):
+    context.bot.send_message(chat_id=update.effective_chat.id, text=f"I'm a bot in {config.system}, please talk to me!")
 
 
 def extract_urls(update):  # 该怎么传入 update
@@ -67,12 +73,8 @@ def save_as_note(update: Update, context: CallbackContext):
     if not (netstr.isalnum() and 2<len(netstr)<16):
         netstr = 'wrong_format'
     # 根据系统特征选择 要保存的位置，根据不同用户添加不同网址
-    if  platform.platform()== 'Windows-10-10.0.19044-SP0':
-        save_file = 'ahfei.md'
-    elif platform.platform()== 'Linux-5.10.0-20-amd64-x86_64-with-glibc2.31':
-        save_file = '/home/skf/myserve/webnote/_tmp/' + netstr
-    else:
-        context.bot.send_message(chat_id=update.effective_chat.id, text="where am I?")
+    save_file = config.save_file + netstr
+
 
     # 读取然后保存
     with open(str(target_file) + '.txt', 'r', encoding='utf-8') as f:
@@ -83,7 +85,7 @@ def save_as_note(update: Update, context: CallbackContext):
         f.write(mysave + mysave_url)
 
     # 根据用户选定的网址 给出网址链接
-    context.bot.send_message(chat_id=update.effective_chat.id, text="save done.please visit http://webnote.ahfei.blog/" + netstr)
+    context.bot.send_message(chat_id=update.effective_chat.id, text="save done. please visit http://webnote.ahfei.blog/" + netstr)
 
     # 制作对话内的键盘，第一个是专门的结构，第二个函数是将这个结构转成
     inline_kb = [
