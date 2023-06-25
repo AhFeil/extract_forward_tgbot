@@ -7,6 +7,15 @@ __pycache__/
 # C extensions
 *.so
 
+#mine
+backup/
+outdate/
+single/
+2082052804.txt
+2082052804_url.txt
+ahfei.md
+
+
 # Distribution / packaging
 .Python
 build/
