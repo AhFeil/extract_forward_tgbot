@@ -9,7 +9,6 @@ import os
 
 from telegram import Update
 from telegram.ext import ContextTypes
-from telegram import InlineQueryResultArticle, InputTextMessageContent
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 import config
@@ -153,6 +152,7 @@ async def earliest_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     n_url = 0
     target_file = update.effective_chat.id
     first_message = ""
+
     with open(str(target_file) + '.txt', 'r', encoding='utf-8') as f:
         # 读第一行，空的时候返回信息。换行不算空
         if not f.readline():
@@ -174,9 +174,6 @@ async def earliest_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         first_date = f.read(46)[27:]
 
     with open(str(target_file) + '_url.txt', 'r', encoding='utf-8') as f:
-        if not f.readline():
-            await context.bot.send_message(chat_id=update.effective_chat.id, text="You don't have any message.")
-            return 0
         # 统计网址数量，会自动跳过空行
         for line in f:
             n_url += 1

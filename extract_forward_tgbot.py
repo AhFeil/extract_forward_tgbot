@@ -39,7 +39,9 @@ if __name__ == '__main__':
     # 类似路由，接收到 /start 执行哪个函数，
     start_handler = CommandHandler('start', start)
     # 转存
-    transfer_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), transfer)
+    transfer_handler = MessageHandler((~filters.COMMAND), transfer)
+    # # 转存含图片的
+    # transfer_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), transfer)
     # 确认删除转存内容
     sure_clear_handler = CommandHandler('clear', sure_clear)
     # 另存到
