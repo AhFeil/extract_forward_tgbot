@@ -4,11 +4,11 @@ tg机器人的所有命令行为（除了start）
 """
 import datetime
 import re
-from time import time,localtime,strftime
+from time import time, localtime, strftime
 import os
 
 from telegram import Update
-from telegram.ext import CallbackContext, ContextTypes
+from telegram.ext import ContextTypes
 from telegram import InlineQueryResultArticle, InputTextMessageContent
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -16,8 +16,9 @@ import config
 
 
 # 回复固定内容
-def start(update: Update, context: CallbackContext):
-    context.bot.send_message(chat_id=update.effective_chat.id, text=f"I'm a bot in {config.system}, please talk to me!")
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(chat_id=update.effective_chat.id,
+                                   text=f"I'm a bot in {config.system}, please talk to me!")
 
 
 def extract_urls(update):  # 该怎么传入 update
@@ -25,26 +26,28 @@ def extract_urls(update):  # 该怎么传入 update
 
 
 # 转存
-def transfer(update: Update, context: CallbackContext):
+async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     target_file = update.effective_chat.id
 
-    # 提取特定频道信息中的网址，先保证只有转发的才会触发这一条, and 应用这条规则的频道等
-    if update.message.forward_from_chat and update.message.forward_from_chat.id == -1001651435712:
-        # 有时候AHHH那个也会发纯文本，如果只有 ~。caption，就不能处理纯文本了，还会报错
-        string = ''   # 不然异常终止后会销毁string
-        try:
-            string += update.message.caption
-        except:
-            string += update.message.text
-        print(string)
-        url = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', string)
-        with open(str(target_file) + '_url' + '.txt', 'a', encoding='utf-8') as f:
-            f.write('\n'.join(filter(None, url)) + '\n')
-        context.bot.send_message(chat_id=update.effective_chat.id, text='url saved.')
-        return 0
+    # # 提取特定频道信息中的网址，先保证只有转发的才会触发这一条, and 应用这条规则的频道等
+    # if update.message.forward_from_chat and update.message.forward_from_chat.id == -1001651435712:
+    #     # 有时候AHHH那个也会发纯文本，如果只有 ~。caption，就不能处理纯文本了，还会报错
+    #     string = ''   # 不然异常终止后会销毁string
+    #     try:
+    #         string += update.message.caption
+    #     except:
+    #         string += update.message.text
+    #     print(string)
+    #     url = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', string)
+    #     with open(str(target_file) + '_url' + '.txt', 'a', encoding='utf-8') as f:
+    #         f.write('\n'.join(filter(None, url)) + '\n')
+    #     await context.bot.send_message(chat_id=update.effective_chat.id, text='url saved.')
+    #     return 0
 
-    t = str(datetime.datetime.now())
+    rec_time = str(datetime.datetime.now())
     link = []
+
+    # 提取内容
     if update.message.text:
         content = update.message.text
         search_link = update.message.entities
@@ -57,35 +60,35 @@ def transfer(update: Update, context: CallbackContext):
             link.append(i.url)
     # print(content)
     element = '\n'
-    # 不知道为什么会报错，好像是字符串相加不能有 None ，只对caption报错
+    # 保存到文件中
     with open(str(target_file) + '.txt', 'a', encoding='utf-8') as f:
-        f.write(t.center(80, '-') + '\n' + content + '\n' + element.join(filter(None, link)) + '\n\n')
-    context.bot.send_message(chat_id=update.effective_chat.id, text='transfer done.')
+        f.write(rec_time.center(80, '-') + '\n' + content + '\n' + element.join(filter(None, link)) + '\n\n')
+
+    await context.bot.send_message(chat_id=update.effective_chat.id, text='transfer done.')
 
 
 # 另存到
-def save_as_note(update: Update, context: CallbackContext):
+async def save_as_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # 存有信息的文件
     target_file = update.effective_chat.id
     # 选择的网址地址
     netstr = 'iVEAx10O7Xk1Wf'
-    # 长度限制3个到15个，字符限制仅字母和数字
-    if not (netstr.isalnum() and 2<len(netstr)<16):
-        netstr = 'wrong_format'
+    # # 长度限制3个到15个，字符限制仅字母和数字
+    # if not (netstr.isalnum() and 2<len(netstr)<16):
+    #     netstr = 'wrong_format'
     # 根据系统特征选择 要保存的位置，根据不同用户添加不同网址
-    save_file = config.save_file + netstr
-
+    save_file = config.save_dir + netstr
 
     # 读取然后保存
     with open(str(target_file) + '.txt', 'r', encoding='utf-8') as f:
-        mysave = f.read()
+        saved = f.read()
     with open(str(target_file) + '_url' + '.txt', 'r', encoding='utf-8') as f:
-        mysave_url = f.read()
+        saved_url = f.read()
     with open(save_file, 'a', encoding='utf-8') as f:
-        f.write(mysave + mysave_url)
+        f.write(saved + saved_url)
 
     # 根据用户选定的网址 给出网址链接
-    context.bot.send_message(chat_id=update.effective_chat.id, text="save done. please visit http://webnote.ahfei.blog/" + netstr)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="save done. please visit " + config.domain + netstr)
 
     # 制作对话内的键盘，第一个是专门的结构，第二个函数是将这个结构转成
     inline_kb = [
@@ -96,12 +99,12 @@ def save_as_note(update: Update, context: CallbackContext):
     ]
     kb_markup = InlineKeyboardMarkup(inline_kb)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, text="and then ..." , reply_markup=kb_markup)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="and then ...", reply_markup=kb_markup)
 
 
 # 确认删除转存内容
-def sure_clear(update: Update, context: CallbackContext):
-    # 制作对话内的键盘，第一个是专门的结构，第二个函数是将这个结构转成
+async def sure_clear(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     inline_kb = [
         [
             InlineKeyboardButton('sure to clear', callback_data=str('clearall')),
@@ -109,14 +112,14 @@ def sure_clear(update: Update, context: CallbackContext):
     ]
     kb_markup = InlineKeyboardMarkup(inline_kb)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Warning! You are clearing your data", reply_markup=kb_markup)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="Warning! You'll clear your data", reply_markup=kb_markup)
 
 
 # 接收按键里的信息并删除转存内容 或回复不删
-def clear(update: Update, context: CallbackContext):
+async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     target_file = update.effective_chat.id
     query = update.callback_query
-    query.answer()
+    await query.answer()
     t = localtime(time())
     day = strftime('%m-%d-%H-%M-%S', t)
     # filename = str(target_file) + '_backup' + '.txt'  # 以后可以选择只备份一次
@@ -136,16 +139,16 @@ def clear(update: Update, context: CallbackContext):
             f.truncate(0)
         with open(backup_path, 'w', encoding='utf-8') as f:
             f.write(mysave + mysave_url)
-        query.edit_message_text(text=f"Selected option: {query.data}, clear done.")
+        await query.edit_message_text(text=f"Selected option: {query.data}, clear done.")
     elif query.data == 'notclear':
-        query.edit_message_text(text="OK, I haven't clear yet")
+        await query.edit_message_text(text="OK, I haven't clear yet")
     else:
-        query.edit_message_text(text="This command is not mine")
+        await query.edit_message_text(text="This command is not mine")
 
 
 # 显示最早的一条信息。标准操作，只有两种情况，全空，或者开头是 '-' * 27 ，下面也只考虑这两种情况
 # 顺便统计消息数量和网址数量
-def earliest_msg(update: Update, context: CallbackContext):
+async def earliest_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     n = 2
     n_url = 0
     target_file = update.effective_chat.id
@@ -153,7 +156,7 @@ def earliest_msg(update: Update, context: CallbackContext):
     with open(str(target_file) + '.txt', 'r', encoding='utf-8') as f:
         # 读第一行，空的时候返回信息。换行不算空
         if not f.readline():
-            context.bot.send_message(chat_id=update.effective_chat.id, text="You don't have any message.")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="You don't have any message.")
             return 0
         # 只读取第一条信息。对f的每一次读取都被记录下来了，第一行被上面读了，下面读到第二个标记，在下面统计的读的是第二个标签之后的
         for line in f:
@@ -172,18 +175,20 @@ def earliest_msg(update: Update, context: CallbackContext):
 
     with open(str(target_file) + '_url.txt', 'r', encoding='utf-8') as f:
         if not f.readline():
-            context.bot.send_message(chat_id=update.effective_chat.id, text="You don't have any message.")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="You don't have any message.")
             return 0
         # 统计网址数量，会自动跳过空行
         for line in f:
             n_url += 1
 
-    context.bot.send_message(chat_id=update.effective_chat.id, text=f'The number of messages you have saved is {n}, and {n_url} urls.\nHere is the earliest message you saved at ' + first_date)
-    context.bot.send_message(chat_id=update.effective_chat.id, text=first_message)
+    await context.bot.send_message(chat_id=update.effective_chat.id,
+                                   text=f'The number of messages you have saved is {n}, and {n_url} urls.\n'
+                                        f'Here is the earliest message you saved at ' + first_date)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=first_message)
 
 
 # 删除最新添加的一条会返回文本，可以实现外显链接，
-def delete_last_msg(update: Update, context: CallbackContext):
+async def delete_last_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     target_file = update.effective_chat.id
     last_message = ""
 
@@ -215,11 +220,10 @@ def delete_last_msg(update: Update, context: CallbackContext):
         f.truncate(size)
 
     # 发送到tg
-    context.bot.send_message(chat_id=update.effective_chat.id, text=f'Here is the last message you saved')
-    context.bot.send_message(chat_id=update.effective_chat.id, text=last_message)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Here is the last message you saved')
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=last_message)
 
 
 # 未知命令回复
-def unknown(update: Update, context: CallbackContext):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I didn't understand that command.")
-
+async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I didn't understand that command.")
