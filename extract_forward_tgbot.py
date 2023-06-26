@@ -69,12 +69,6 @@ if __name__ == '__main__':
     unknown_handler = MessageHandler(filters.COMMAND, unknown)
     application.add_handler(unknown_handler)
 
+    # 启动
     application.run_polling()
-
-
-
-
-
-
-
 

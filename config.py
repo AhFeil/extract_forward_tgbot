@@ -4,6 +4,22 @@ from enum import Enum
 import os
 import sys
 import logging
+import argparse
+
+# 创建一个解析器
+parser = argparse.ArgumentParser(description="Your script description")
+
+# 添加你想要接收的命令行参数
+parser.add_argument('--chat_id', required=True, help='Chat ID')
+parser.add_argument('--bot_token', required=True, help='Bot token')
+
+# 解析命令行参数
+args = parser.parse_args()
+
+# 将参数值赋给你的变量
+chat_id = args.chat_id
+bot_token = args.bot_token
+
 
 # 定义所有变量
 save_dir = ''   # 所有任务文件所在
@@ -33,10 +49,6 @@ else:
     ENVIRONMENT = Environment.OTHER
     sys.exit('Unknown system.')
 
-
-# 这两个应该作为参数输入
-chat_id = '2082052804'
-bot_token = '5344378819:AAGG3r70tFwfiaUr1884TIzc8y5z2pY9xmY'
 
 manage_id = [chat_id, '1111111111']
 logging.basicConfig(

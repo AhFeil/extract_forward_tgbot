@@ -1,6 +1,5 @@
 """
-tg机器人的所有命令行为（除了start）
-查 需要改
+tg机器人的所有命令行为（除了 shutdown）
 """
 import datetime
 import re
@@ -79,15 +78,15 @@ async def save_as_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_file = config.save_dir + netstr
 
     # 读取然后保存
-    with open(str(target_file) + '.txt', 'r', encoding='utf-8') as f:
+    with open(str(target_file) + '.txt', 'r', encoding='utf-8') as f, \
+            open(str(target_file) + '_url.txt', 'r', encoding='utf-8') as f_url:
         saved = f.read()
-    with open(str(target_file) + '_url' + '.txt', 'r', encoding='utf-8') as f:
-        saved_url = f.read()
+        saved_url = f_url.read()
     with open(save_file, 'a', encoding='utf-8') as f:
         f.write(saved + saved_url)
 
-    # 根据用户选定的网址 给出网址链接
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="save done. please visit " + config.domain + netstr)
+    # 给出网址链接
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"save done. please visit {config.domain}{netstr}")
 
     # 制作对话内的键盘，第一个是专门的结构，第二个函数是将这个结构转成
     inline_kb = [
@@ -128,14 +127,15 @@ async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # print(backup_path)  # 虽然D:\Data\Codes\SelfProject\TGBot\./backup/2082052804_backup_09-23-00-16-39.txt，但可以用
 
     if query.data == 'clearall':
-        with open(str(target_file) + '.txt', 'r', encoding='utf-8') as f:
+        with open(str(target_file) + '.txt', 'r+', encoding='utf-8') as f, \
+                open(str(target_file) + '_url.txt', 'r+', encoding='utf-8') as f_url:
             mysave = f.read()
-        with open(str(target_file) + '_url' + '.txt', 'r', encoding='utf-8') as f:
-            mysave_url = f.read()
-        with open(str(target_file) + '.txt', 'a+', encoding='utf-8') as f:
-            f.truncate(0)
-        with open(str(target_file) + '_url' + '.txt', 'a+', encoding='utf-8') as f:
-            f.truncate(0)
+            mysave_url = f_url.read()
+            # 重置文件指针并清除文件内容
+            f.seek(0)
+            f.truncate()
+            f_url.seek(0)
+            f_url.truncate()
         with open(backup_path, 'w', encoding='utf-8') as f:
             f.write(mysave + mysave_url)
         await query.edit_message_text(text=f"Selected option: {query.data}, clear done.")
@@ -148,16 +148,18 @@ async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 # 显示最早的一条信息。标准操作，只有两种情况，全空，或者开头是 '-' * 27 ，下面也只考虑这两种情况
 # 顺便统计消息数量和网址数量
 async def earliest_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    n = 2
-    n_url = 0
+    msg_count = 2
+    url_count = 0
     target_file = update.effective_chat.id
     first_message = ""
 
-    with open(str(target_file) + '.txt', 'r', encoding='utf-8') as f:
-        # 读第一行，空的时候返回信息。换行不算空
-        if not f.readline():
+    with open(str(target_file) + '.txt', 'r', encoding='utf-8') as f, \
+            open(str(target_file) + '_url.txt', 'r', encoding='utf-8') as f_url:
+        # 如果文件为空(读第一行,换行不算空)
+        if not f.readline() and not f_url.readline():
             await context.bot.send_message(chat_id=update.effective_chat.id, text="You don't have any message.")
             return 0
+
         # 只读取第一条信息。对f的每一次读取都被记录下来了，第一行被上面读了，下面读到第二个标记，在下面统计的读的是第二个标签之后的
         for line in f:
             if first_message and line[0:27] == '-' * 27:
@@ -168,19 +170,18 @@ async def earliest_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # 统计消息数量
         for line in f:
             if line[0:27] == '-' * 27:
-                n += 1
+                msg_count += 1
         # 文件指针回到开头读首条数据时间
         f.seek(0)
         first_date = f.read(46)[27:]
 
-    with open(str(target_file) + '_url.txt', 'r', encoding='utf-8') as f:
         # 统计网址数量，会自动跳过空行
-        for line in f:
-            n_url += 1
+        for line in f_url:
+            url_count += 1
 
     await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text=f'The number of messages you have saved is {n}, and {n_url} urls.\n'
-                                        f'Here is the earliest message you saved at ' + first_date)
+                                   text=f'The number of messages you have saved is {msg_count}, and {url_count} urls.\n'
+                                        f'Here is the earliest message you saved at {first_date}')
     await context.bot.send_message(chat_id=update.effective_chat.id, text=first_message)
 
 
