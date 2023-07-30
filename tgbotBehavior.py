@@ -98,10 +98,10 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # 读取然后保存
     with open(store_file + '.txt', 'r', encoding='utf-8') as f, \
             open(store_file + '_url.txt', 'r', encoding='utf-8') as f_url:
-        saved = f.read()
-        saved_url = f_url.read()
+        stored = f.read()
+        stored_url = f_url.read()
     with open(save_file, 'a', encoding='utf-8') as f:
-        f.write(saved + saved_url)
+        f.write(stored + stored_url)
 
     # 给出网址链接
     await context.bot.send_message(chat_id=update.effective_chat.id, text=f"forward done. "
@@ -145,10 +145,10 @@ async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     t = localtime(time())
     backup_time = strftime('%m-%d-%H-%M-%S', t)
-    filename = config.backupdir + store_file + f'_backup_{backup_time}' + '.txt'
+    filename = config.backupdir + str(target_file) + f'_backup_{backup_time}' + '.txt'
     if config.backupdir[0] == '/':
         backup_path = filename
-    elif  config.backupdir[0] == '.':
+    elif config.backupdir[0] == '.':
         path = os.getcwd()
         backup_path = os.path.join(path, filename)
         # print(backup_path)  # 虽然D:\Data\Codes\SelfProject\TGBot\./backup/2082052804_backup_09-23-00-16-39.txt，但可以用
