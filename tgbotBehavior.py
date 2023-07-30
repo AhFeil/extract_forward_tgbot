@@ -36,7 +36,7 @@ def extract_urls(update: Update):
     except:
         string += update.message.text
 
-    print(string)
+    # print(string)
     url = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', string)
 
     return url
@@ -50,16 +50,16 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # 对指定频道进行特殊处理，目前是对指定频道只提取网址。
     # 先保证只有转发的才会触发这一条
-    if update.message.forward_from_chat:
-        forward_chat = update.message.forward_from_chat
-        username = forward_chat.username if forward_chat.username else forward_chat.title
-        # print(f"转发消息的来源用户名：{username}")
-        if username in config.channel:
-            url = extract_urls(update=update)
-            with open(store_file + '_url' + '.txt', 'a', encoding='utf-8') as f:
-                f.write('\n'.join(filter(None, url)) + '\n')
-            await context.bot.send_message(chat_id=update.effective_chat.id, text='url saved.')
-
+    message = update.message
+    if message.forward_from_chat and message.forward_from_chat.username in config.channel:
+        # forward_chat = update.message.forward_from_chat
+        # username = forward_chat.username if forward_chat.username else forward_chat.title
+        # # print(f"转发消息的来源用户名：{username}")
+        # if username in config.channel:
+        url = extract_urls(update=update)
+        with open(store_file + '_url' + '.txt', 'a', encoding='utf-8') as f:
+            f.write('\n'.join(filter(None, url)) + '\n')
+        await context.bot.send_message(chat_id=update.effective_chat.id, text='url saved.')
     else:   # 通用规则，先提取文本，再把内联网址按顺序列在后面
         link = []
 
