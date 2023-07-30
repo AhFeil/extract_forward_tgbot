@@ -33,7 +33,8 @@ class Environment(Enum):
 
 
 ENVIRONMENT = Environment.OTHER   # 当前程序的运行系统
-save_dir = 'forward_message'   # 转发保存到目录下
+store_dir = './forward_message/'   # 存储目录
+forward_dir = ''   # 转发目录
 system = platform.system()  # 获取操作系统名字
 domain = ''   # 查看转存内容的网址的域名
 
@@ -44,13 +45,13 @@ if system == 'Windows':
     os.environ["http_proxy"] = "http://127.0.0.1:10809"
     os.environ["https_proxy"] = "http://127.0.0.1:10809"
     domain = 'http://no.domain/'
-    save_dir = './'
+    forward_dir = './'
 elif system == 'Linux':
     # 处于生产环境
     ENVIRONMENT = Environment.LINUX
     # 选择的网址地址
     domain = 'http://webnote.ahfei.blog/'
-    save_dir = '/home/skf/myserve/webnote/_tmp/'
+    forward_dir = '/home/skf/myserve/webnote/_tmp/'
 else:
     ENVIRONMENT = Environment.OTHER
     sys.exit('Unknown system.')

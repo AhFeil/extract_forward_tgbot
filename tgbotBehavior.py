@@ -18,10 +18,11 @@ import config
 # 回复固定内容
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     target_file = update.effective_chat.id
+    store_file = config.store_dir + str(target_file)
     # 第一次聊天时预先创建两个用户数据文件，防止后续代码读取时因不存在出错
-    with open(str(target_file) + '_url' + '.txt', 'w', encoding='utf-8'):
+    with open(store_file + '_url' + '.txt', 'w', encoding='utf-8'):
         pass
-    with open(str(target_file) + '.txt', 'w', encoding='utf-8'):
+    with open(store_file + '.txt', 'w', encoding='utf-8'):
         pass
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                    text=f"This is extract-forward bot in {config.system}, 这是一个转存机器人")
@@ -44,6 +45,7 @@ def extract_urls(update: Update):
 # 转存
 async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     target_file = update.effective_chat.id
+    store_file = config.store_dir + str(target_file)
     rec_time = str(datetime.datetime.now())
 
     # 对指定频道进行特殊处理，目前是对指定频道只提取网址。
@@ -54,7 +56,7 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # print(f"转发消息的来源用户名：{username}")
         if username in config.channel:
             url = extract_urls(update=update)
-            with open(str(target_file) + '_url' + '.txt', 'a', encoding='utf-8') as f:
+            with open(store_file + '_url' + '.txt', 'a', encoding='utf-8') as f:
                 f.write('\n'.join(filter(None, url)) + '\n')
             await context.bot.send_message(chat_id=update.effective_chat.id, text='url saved.')
 
@@ -77,7 +79,7 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
         saved_content = rec_time.center(80, '-') + '\n' + content + '\n' + element.join(filter(None, link)) + '\n\n'
 
         # 保存到文件中
-        with open(str(target_file) + '.txt', 'a', encoding='utf-8') as f:
+        with open(store_file + '.txt', 'a', encoding='utf-8') as f:
             f.write(saved_content)
 
         await context.bot.send_message(chat_id=update.effective_chat.id, text='transfer done. 转存完成')
@@ -87,17 +89,18 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     target_file = update.effective_chat.id   # 存有信息的文件
+    store_file = config.store_dir + str(target_file)
     # netstr = config.netstr   # 选择的网址地址
     # 随机生成 10位 的 字母和数字
     random_str = ''.join(random.sample(string.ascii_letters + string.digits, 16))
     netstr = random_str
 
     # 根据系统特征选择 要保存的位置，根据不同用户添加不同网址
-    save_file = config.save_dir + netstr
+    save_file = config.forward_dir + netstr
 
     # 读取然后保存
-    with open(str(target_file) + '.txt', 'r', encoding='utf-8') as f, \
-            open(str(target_file) + '_url.txt', 'r', encoding='utf-8') as f_url:
+    with open(store_file + '.txt', 'r', encoding='utf-8') as f, \
+            open(store_file + '_url.txt', 'r', encoding='utf-8') as f_url:
         saved = f.read()
         saved_url = f_url.read()
     with open(save_file, 'a', encoding='utf-8') as f:
@@ -138,13 +141,14 @@ async def sure_clear(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # 这个才是真实操作的删除函数，clearall 指向这个，接收按键里的信息并删除转存内容 或回复不删
 async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     target_file = update.effective_chat.id
+    store_file = config.store_dir + str(target_file)
     # 一个特殊的缓冲区？
     query = update.callback_query
     await query.answer()
 
     t = localtime(time())
     backup_time = strftime('%m-%d-%H-%M-%S', t)
-    filename = config.backupdir + str(target_file) + f'_backup_{backup_time}' + '.txt'
+    filename = config.backupdir + store_file + f'_backup_{backup_time}' + '.txt'
     if config.backupdir[0] == '/':
         backup_path = filename
     elif  config.backupdir[0] == '.':
@@ -155,8 +159,8 @@ async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         print('wrong backupdir')
 
     if query.data == 'clearall':
-        with open(str(target_file) + '.txt', 'r+', encoding='utf-8') as f, \
-                open(str(target_file) + '_url.txt', 'r+', encoding='utf-8') as f_url:
+        with open(store_file + '.txt', 'r+', encoding='utf-8') as f, \
+                open(store_file + '_url.txt', 'r+', encoding='utf-8') as f_url:
             mysave = f.read()
             mysave_url = f_url.read()
             # 重置文件指针并清除文件内容
@@ -179,10 +183,11 @@ async def earliest_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg_count = 2
     url_count = 0
     target_file = update.effective_chat.id
+    store_file = config.store_dir + str(target_file)
     first_message = ""
 
-    with open(str(target_file) + '.txt', 'r', encoding='utf-8') as f, \
-            open(str(target_file) + '_url.txt', 'r', encoding='utf-8') as f_url:
+    with open(store_file + '.txt', 'r', encoding='utf-8') as f, \
+            open(store_file + '_url.txt', 'r', encoding='utf-8') as f_url:
         # 如果文件为空(读第一行,换行不算空)
         if not f.readline() and not f_url.readline():
             await context.bot.send_message(chat_id=update.effective_chat.id, text="You don't have any message. "
@@ -219,9 +224,10 @@ async def earliest_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # 删除最新添加的一条会返回文本，可以实现外显链接，
 async def delete_last_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     target_file = update.effective_chat.id
+    store_file = config.store_dir + str(target_file)
     last_message = ""
 
-    with open(str(target_file) + '.txt', 'r', encoding='utf-8') as f:
+    with open(store_file + '.txt', 'r', encoding='utf-8') as f:
         # 先全部读取，从倒数第二行开始判断
         str_list = f.readlines()
         i = -2
@@ -237,7 +243,7 @@ async def delete_last_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         last_message = ''.join(last_lines)
         # print(last_message)
 
-    with open(str(target_file) + '.txt', 'a+', encoding='utf-8') as f:
+    with open(store_file + '.txt', 'a+', encoding='utf-8') as f:
         # 删除
         last_length = 0
         # 获得要开始删除的位置，以字节计，总文件字节 - 要删除的字节 - 行（行尾的神秘符号？）
