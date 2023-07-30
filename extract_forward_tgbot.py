@@ -19,6 +19,7 @@ from telegram.ext import filters, MessageHandler, ApplicationBuilder, CommandHan
 
 import config   # print(config.ENVIRONMENT)  # 打印ENVIRONMENT的值
 from tgbotBehavior import start, transfer, clear, forward, unknown, earliest_msg, sure_clear, delete_last_msg
+from multi import set_config
 
 
 # 关闭机器人，这个只能在这，因为 updater 和 sys
@@ -42,10 +43,12 @@ if __name__ == '__main__':
     transfer_handler = MessageHandler((~filters.COMMAND), transfer)
     # # 转存含图片的
     # transfer_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), transfer)
+    # 设置网址
+    set_handler = CommandHandler('set', set_config)
     # 确认删除转存内容
     sure_clear_handler = CommandHandler('clear', sure_clear)
     # 另存到
-    save_handler = CommandHandler('save', forward)
+    forward_handler = CommandHandler('forward', forward)
     # 显示最早的一条信息
     earliest_msg_handler = CommandHandler('emsg', earliest_msg)
     # 删除最新的一条信息
@@ -56,11 +59,12 @@ if __name__ == '__main__':
     # 注册 start_handler ，以便调度
     application.add_handler(start_handler)
     application.add_handler(transfer_handler)
+    application.add_handler(set_handler)
     application.add_handler(sure_clear_handler)
     # 删除转存内容 或回复不删
     application.add_handler(CallbackQueryHandler(clear))
 
-    application.add_handler(save_handler)
+    application.add_handler(forward_handler)
     application.add_handler(earliest_msg_handler)
     application.add_handler(delete_msg_handler)
     application.add_handler(shutdown_handler)
