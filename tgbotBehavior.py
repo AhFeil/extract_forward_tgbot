@@ -17,6 +17,12 @@ import config
 
 # 回复固定内容
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    target_file = update.effective_chat.id
+    # 第一次聊天时预先创建两个用户数据文件，防止后续代码读取时因不存在出错
+    with open(str(target_file) + '_url' + '.txt', 'w', encoding='utf-8'):
+        pass
+    with open(str(target_file) + '.txt', 'w', encoding='utf-8'):
+        pass
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                    text=f"This is extract-forward bot in {config.system}, 这是一个转存机器人")
 
@@ -40,12 +46,17 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     target_file = update.effective_chat.id
     rec_time = str(datetime.datetime.now())
 
-    # 对指定频道进行特殊处理，目前是对指定频道只提取网址。 先保证只有转发的才会触发这一条, and 应用这条规则的频道等
-    if update.message.forward_from_chat and update.message.forward_from_chat.id in config.channel:
-        url = extract_urls(update=update)
-        with open(str(target_file) + '_url' + '.txt', 'a', encoding='utf-8') as f:
-            f.write('\n'.join(filter(None, url)) + '\n')
-        await context.bot.send_message(chat_id=update.effective_chat.id, text='url saved.')
+    # 对指定频道进行特殊处理，目前是对指定频道只提取网址。
+    # 先保证只有转发的才会触发这一条
+    if update.message.forward_from_chat:
+        forward_chat = update.message.forward_from_chat
+        username = forward_chat.username if forward_chat.username else forward_chat.title
+        # print(f"转发消息的来源用户名：{username}")
+        if username in config.channel:
+            url = extract_urls(update=update)
+            with open(str(target_file) + '_url' + '.txt', 'a', encoding='utf-8') as f:
+                f.write('\n'.join(filter(None, url)) + '\n')
+            await context.bot.send_message(chat_id=update.effective_chat.id, text='url saved.')
 
     else:   # 通用规则，先提取文本，再把内联网址按顺序列在后面
         link = []
