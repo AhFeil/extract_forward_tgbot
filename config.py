@@ -21,7 +21,7 @@ bot_token = args.bot_token
 
 
 # 预先声明变量
-channel = [-1001651435712]   # 应用特殊提取规则的频道
+channel = ['abskoop']   # 应用特殊提取规则的频道
 netstr = 'iVEAx10O7Xk1Wf'
 backupdir = './backup/'   # 绝对路径自然搜索以 / 开头，相对路径要以 ./ 开头 ,以 '/' 结尾
 
@@ -33,7 +33,7 @@ class Environment(Enum):
 
 
 ENVIRONMENT = Environment.OTHER   # 当前程序的运行系统
-save_dir = ''   # 转发保存到哪个目录下
+save_dir = 'forward_message'   # 转发保存到目录下
 system = platform.system()  # 获取操作系统名字
 domain = ''   # 查看转存内容的网址的域名
 
