@@ -224,10 +224,10 @@ async def earliest_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # 删除最新添加的一条会返回文本，可以实现外显链接，
 async def delete_last_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     target_file = update.effective_chat.id
-    store_file = config.store_dir + str(target_file)
+    store_file = config.store_dir + str(target_file) + '.txt'
     last_message = ""
 
-    with open(store_file + '.txt', 'r', encoding='utf-8') as f:
+    with open(store_file, 'r', encoding='utf-8') as f:
         # 先全部读取，从倒数第二行开始判断
         str_list = f.readlines()
         i = -2
@@ -243,13 +243,13 @@ async def delete_last_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         last_message = ''.join(last_lines)
         # print(last_message)
 
-    with open(store_file + '.txt', 'a+', encoding='utf-8') as f:
+    with open(store_file, 'a+', encoding='utf-8') as f:
         # 删除
         last_length = 0
         # 获得要开始删除的位置，以字节计，总文件字节 - 要删除的字节 - 行（行尾的神秘符号？）
         for i in last_lines:
             last_length += len(i.encode())
-        size = os.path.getsize(f'./{update.effective_chat.id}.txt') - last_length - len(last_lines)
+        size = os.path.getsize(store_file) - last_length - len(last_lines)
         size = 0 if size < 0 else size
         print(size)
         f.truncate(size)
