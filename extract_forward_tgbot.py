@@ -43,8 +43,6 @@ if __name__ == '__main__':
     transfer_handler = MessageHandler((~filters.COMMAND), transfer)
     # # 转存含图片的
     # transfer_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), transfer)
-    # 设置网址
-    set_handler = CommandHandler('set', set_config)
     # 确认删除转存内容
     sure_clear_handler = CommandHandler('clear', sure_clear)
     # 另存到
@@ -59,7 +57,6 @@ if __name__ == '__main__':
     # 注册 start_handler ，以便调度
     application.add_handler(start_handler)
     application.add_handler(transfer_handler)
-    application.add_handler(set_handler)
     application.add_handler(sure_clear_handler)
     # 删除转存内容 或回复不删
     application.add_handler(CallbackQueryHandler(clear))
