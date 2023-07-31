@@ -228,6 +228,12 @@ async def delete_last_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     last_message = ""
 
     with open(store_file, 'r', encoding='utf-8') as f:
+        if not f.readline():
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="You don't have any message "
+                                                                                  "except for url."
+                                                                                  "你没有任何数据，可能有网址。")
+            return 0
+
         # 先全部读取，从倒数第二行开始判断
         str_list = f.readlines()
         i = -2
