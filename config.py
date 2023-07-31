@@ -14,6 +14,8 @@ parser.add_argument('--chat_id', required=True, help='Chat ID')
 parser.add_argument('--bot_token', required=True, help='Bot token')
 parser.add_argument('--forward_dir', required=True, help='forward directory')
 parser.add_argument('--domain', required=True, help='domain')
+parser.add_argument('--path', default='default_path', help='path of URL')
+
 # 解析命令行参数
 args = parser.parse_args()
 
@@ -22,11 +24,11 @@ chat_id = args.chat_id
 bot_token = args.bot_token
 forward_dir = args.forward_dir   # 转发目录
 domain = args.domain   # 查看转存内容的网址的域名
+netstr = args.path
 
 # 预先声明变量
 channel = ['abskoop']   # 应用特殊提取规则的频道
 manage_id = [chat_id, '1111111111']   # 管理员 id
-netstr = 'iVEAx10O7Xk1Wf'
 store_dir = './forward_message/'   # 存储目录
 backupdir = './backup/'   # 绝对路径自然搜索以 / 开头，相对路径要以 ./ 开头 ,以 '/' 结尾
 
