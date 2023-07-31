@@ -25,7 +25,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     with open(store_file + '.txt', 'w', encoding='utf-8'):
         pass
     await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text=f"This is extract-forward bot in {config.system}, 这是一个转存机器人")
+                                   text=f"This is extract-forward bot in {config.system}, 这是一个转存机器人\n\n"
+                                        f"基本使用说明：\n"
+                                        f"1. 转发(forward)消息给机器人，或者直接发送消息，机器人会存储；\n"
+                                        f"2. 发送命令 `\\forward` ，会返回网址，访问即可看到所有转发的信息。\n\n"
+                                        f"自托管： https://github.com/AhFeil/extract_forward_tgbot")
 
 
 def extract_urls(update: Update):
