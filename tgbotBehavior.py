@@ -109,7 +109,7 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # 给出网址链接
     await context.bot.send_message(chat_id=update.effective_chat.id, text=f"forward done. "
                                                                           f"please visit {config.domain}{netstr}\n"
-                                                                          f"推送完成，访问 {config.domain}{netstr} 查看")
+                                                                          f"推送完成，访问上面网址查看")
 
     # 制作对话内的键盘，第一个是专门的结构，第二个函数是将这个结构转成
     inline_kb = [
