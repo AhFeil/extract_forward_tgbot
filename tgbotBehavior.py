@@ -76,10 +76,7 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     target_file = update.effective_chat.id   # 存有信息的文件
-    # netstr = config.netstr   # 选择的网址地址
-    # 随机生成 10位 的 字母和数字
-    random_str = ''.join(random.sample(string.ascii_letters + string.digits, 16))
-    netstr = random_str
+    netstr = config.netstr   # 选择的网址地址
 
     # 根据系统特征选择 要保存的位置，根据不同用户添加不同网址
     save_file = config.save_dir + netstr

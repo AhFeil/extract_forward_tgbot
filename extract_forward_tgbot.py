@@ -19,7 +19,6 @@ from telegram.ext import filters, MessageHandler, ApplicationBuilder, CommandHan
 
 import config   # print(config.ENVIRONMENT)  # 打印ENVIRONMENT的值
 from tgbotBehavior import start, transfer, clear, forward, unknown, earliest_msg, sure_clear, delete_last_msg
-from multi import set_config
 
 
 # 关闭机器人，这个只能在这，因为 updater 和 sys
