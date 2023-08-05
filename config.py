@@ -14,7 +14,7 @@ parser.add_argument('--chat_id', required=True, help='Chat ID')
 parser.add_argument('--bot_token', required=True, help='Bot token')
 parser.add_argument('--forward_dir', required=True, help='forward directory')
 parser.add_argument('--domain', required=True, help='domain')
-parser.add_argument('--path', default='default_path', help='path of URL')
+parser.add_argument('--path', required=False, default='default_path', help='path of URL')
 
 # 解析命令行参数
 args = parser.parse_args()
