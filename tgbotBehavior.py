@@ -20,9 +20,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     target_file = update.effective_chat.id
     store_file = config.store_dir + str(target_file)
     # 第一次聊天时预先创建两个用户数据文件，防止后续代码读取时因不存在出错
-    with open(store_file + '_url' + '.txt', 'w', encoding='utf-8'):
+    with open(store_file + '_url' + '.txt', 'a', encoding='utf-8'):
         pass
-    with open(store_file + '.txt', 'w', encoding='utf-8'):
+    with open(store_file + '.txt', 'a', encoding='utf-8'):
         pass
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                    text=f"This is extract-forward bot in {config.system}, 这是一个转存机器人\n\n"
@@ -95,7 +95,7 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     target_file = update.effective_chat.id   # 存有信息的文件
     store_file = config.store_dir + str(target_file)
     # netstr = config.netstr   # 选择的网址地址
-    # 随机生成 10位 的 字母和数字
+    # 随机生成 16位 的 字母和数字
     random_str = ''.join(random.sample(string.ascii_letters + string.digits, 16))
     netstr = random_str
 
