@@ -94,10 +94,12 @@ async def push(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     target_file = update.effective_chat.id   # 存有信息的文件
     store_file = config.store_dir + str(target_file)
+    user_key = str(target_file)
     # netstr = config.netstr   # 选择的网址地址
     # 随机生成 16位 的 字母和数字
     random_str = ''.join(random.sample(string.ascii_letters + string.digits, 16))
-    netstr = random_str
+    # 有设置路径则取用，没有就随机
+    netstr = config.path_dict.get(user_key, random_str)
 
     # 根据系统特征选择 要保存的位置，根据不同用户添加不同网址
     save_file = config.push_dir + netstr

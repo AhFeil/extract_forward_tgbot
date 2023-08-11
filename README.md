@@ -78,7 +78,7 @@ pip3 install -r requirements.txt
 /usr/bin/python3 ~/extract_forward_tgbot/extract_forward_tgbot.py \
 --chat_id 2111111114 \
 --bot_token 6111111110:AAxxxxxxxxxxxxxx9iGxxLa_atxxxxxxuNU \
---forward_dir /var/www/webnote/_tmp/ \
+--push_dir /var/www/webnote/_tmp/ \
 --domain https://forward.vfly.app/ \
 --path push_from_tg
 ```
@@ -86,7 +86,7 @@ pip3 install -r requirements.txt
 这里，
 - chat_id，是管理员的用户 id，目前也只有停止运行一种独有命令
 - bot_token，机器人的 token
-- forward_dir，推送时，将存储的信息保存到，这个目录下的文件中
+- push_dir，推送时，将存储的信息保存到，这个目录下的文件中
 - domain，网页记事本的网址部分
 - path，网页记事本的路径部分。如上面的例子，最终推送网页的地址是 [https://forward.vfly.app/push_from_tg](https://forward.vfly.app/push_from_tg) 。
 

@@ -5,6 +5,8 @@ import os
 import sys
 import logging
 import argparse
+import json
+
 
 # 创建一个解析器
 parser = argparse.ArgumentParser(description="Your script description")
@@ -25,12 +27,22 @@ bot_token = args.bot_token
 push_dir = args.push_dir   # 转发目录
 domain = args.domain   # 查看转存内容的网址的域名
 netstr = args.path
+# 指定 JSON 文件路径
+json_file = 'path_dict.json'
 
 # 预先声明变量
 channel = ['abskoop']   # 应用特殊提取规则的频道
 manage_id = [chat_id, '1111111111']   # 管理员 id
 store_dir = './forward_message/'   # 存储 转存（forward）消息 的目录
 backupdir = './backup/'   # 绝对路径自然搜索以 / 开头，相对路径要以 ./ 开头 ,以 '/' 结尾
+
+# 加载数据
+# 如果文件存在，则加载数据到字典；否则创建一个新的空字典
+if os.path.exists(json_file):
+    with open(json_file, 'r') as file:
+        path_dict = json.load(file)
+else:
+    path_dict = {}
 
 
 class Environment(Enum):

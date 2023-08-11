@@ -13,6 +13,7 @@
 """
 
 import sys
+import json
 
 from telegram import Update
 from telegram.ext import filters, MessageHandler, ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
@@ -27,6 +28,9 @@ async def shutdown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_chat.id) in config.manage_id:
         await context.bot.send_message(chat_id=update.effective_chat.id,
                                        text="robot will shutdown immediately")
+        # 在程序停止运行时将字典保存回文件
+        with open(config.json_file, 'w') as file:
+            json.dump(config.path_dict, file)
         # application.stop()
         sys.exit(0)
     else:
@@ -51,6 +55,8 @@ if __name__ == '__main__':
     earliest_msg_handler = CommandHandler('emsg', earliest_msg)
     # 删除最新的一条信息
     delete_msg_handler = CommandHandler('dmsg', delete_last_msg)
+    # 设置参数，如网址路径
+    set_config_handler = CommandHandler('set', set_config)
     # 停止机器人
     shutdown_handler = CommandHandler('shutdown', shutdown)
 
@@ -64,6 +70,7 @@ if __name__ == '__main__':
     application.add_handler(push_handler)
     application.add_handler(earliest_msg_handler)
     application.add_handler(delete_msg_handler)
+    application.add_handler(set_config_handler)
     application.add_handler(shutdown_handler)
 
     # 未知命令回复。必须放到最后，会先判断前面的命令，都不是才会执行这个
@@ -72,4 +79,8 @@ if __name__ == '__main__':
 
     # 启动
     application.run_polling()
+
+    # 在程序停止运行时将字典保存回文件
+    with open(config.json_file, 'w') as file:
+        json.dump(config.path_dict, file)
 
