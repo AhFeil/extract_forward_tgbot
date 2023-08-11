@@ -35,7 +35,7 @@ async def set_config(update: Update, context: CallbackContext):
     config.path_dict[user_key] = netstr
 
     await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text=f"网址路径设置为 {config.path_dict[user_key]}")
+                                   text=f"网址路径设置为 {config.path_dict[user_key]}， 若要恢复随机，设置路径为 random")
 
 
 
