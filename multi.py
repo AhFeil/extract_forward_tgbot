@@ -24,6 +24,13 @@ async def set_config(update: Update, context: CallbackContext):
                                        text="路径只能使用字母和数字，长度在 [3,26]")
         return
 
+    # 如果路径是 random，则从字典中删除键值对，也就是恢复随机路径
+    if netstr == "random":
+        user_value = config.path_dict.pop(user_key, "already random")
+        await context.bot.send_message(chat_id=update.effective_chat.id,
+                                       text=f"the last path is {user_value}, now is set to random")
+        return
+
     # 如果 netstr 满足要求，则保存到 path_dict
     config.path_dict[user_key] = netstr
 
