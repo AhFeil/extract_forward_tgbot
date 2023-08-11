@@ -28,8 +28,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                    text=f"This is extract-forward bot in {config.system}, 这是一个转存机器人\n\n"
                                         f"基本使用说明：\n"
                                         f"1. 转发(forward)消息给机器人，或者直接发送消息，机器人会存储；\n"
-                                        f"2. 发送命令 `\\forward` ，会返回网址，访问即可看到所有转发的信息。\n\n"
-                                        f"自托管： https://github.com/AhFeil/extract_forward_tgbot")
+                                        f"2. 发送命令 `\\push` ，会返回网址，访问即可看到所有转发的信息。\n\n"
+                                        f"项目地址： https://github.com/AhFeil/extract_forward_tgbot")
 
 
 def extract_urls(update: Update):
@@ -56,7 +56,7 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # 先保证只有转发的才会触发这一条
     message = update.message
     if message.forward_from_chat and message.forward_from_chat.username in config.channel:
-        # forward_chat = update.message.forward_from_chat
+        # forward_chat = update.message.forward_from_chat   # 记录，可能没有 username 而是 title
         # username = forward_chat.username if forward_chat.username else forward_chat.title
         # # print(f"转发消息的来源用户名：{username}")
         # if username in config.channel:
@@ -90,7 +90,7 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # 推送到
-async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def push(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     target_file = update.effective_chat.id   # 存有信息的文件
     store_file = config.store_dir + str(target_file)
@@ -100,18 +100,22 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     netstr = random_str
 
     # 根据系统特征选择 要保存的位置，根据不同用户添加不同网址
-    save_file = config.forward_dir + netstr
+    save_file = config.push_dir + netstr
 
     # 读取然后保存
-    with open(store_file + '.txt', 'r', encoding='utf-8') as f, \
-            open(store_file + '_url.txt', 'r', encoding='utf-8') as f_url:
-        stored = f.read()
-        stored_url = f_url.read()
+    try:
+        with open(store_file + '.txt', 'r', encoding='utf-8') as f, \
+                open(store_file + '_url.txt', 'r', encoding='utf-8') as f_url:
+            stored = f.read()
+            stored_url = f_url.read()
+    except FileNotFoundError:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="请点一下 /start ，再尝试推送")
+        return
     with open(save_file, 'a', encoding='utf-8') as f:
         f.write(stored + stored_url)
 
     # 给出网址链接
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"forward done. "
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"push done. "
                                                                           f"please visit {config.domain}{netstr}\n"
                                                                           f"推送完成，访问上面网址查看")
 
@@ -153,13 +157,14 @@ async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     t = localtime(time())
     backup_time = strftime('%m-%d-%H-%M-%S', t)
     filename = config.backupdir + str(target_file) + f'_backup_{backup_time}' + '.txt'
-    if config.backupdir[0] == '/':
+    if config.backupdir[0] == '/':   # 如果 config 中使用 绝对路径
         backup_path = filename
     elif config.backupdir[0] == '.':
         path = os.getcwd()
         backup_path = os.path.join(path, filename)
         # print(backup_path)  # 虽然D:\Data\Codes\SelfProject\TGBot\./backup/2082052804_backup_09-23-00-16-39.txt，但可以用
     else:
+        backup_path = './wrong-config-backupdir'
         print('wrong backupdir')
 
     if query.data == 'clearall':

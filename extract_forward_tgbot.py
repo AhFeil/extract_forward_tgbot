@@ -18,7 +18,7 @@ from telegram import Update
 from telegram.ext import filters, MessageHandler, ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
 import config   # print(config.ENVIRONMENT)  # 打印ENVIRONMENT的值
-from tgbotBehavior import start, transfer, clear, forward, unknown, earliest_msg, sure_clear, delete_last_msg
+from tgbotBehavior import start, transfer, clear, push, unknown, earliest_msg, sure_clear, delete_last_msg
 from multi import set_config
 
 
@@ -45,8 +45,8 @@ if __name__ == '__main__':
     # transfer_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), transfer)
     # 确认删除转存内容
     sure_clear_handler = CommandHandler('clear', sure_clear)
-    # 另存到
-    forward_handler = CommandHandler('forward', forward)
+    # 推送到
+    push_handler = CommandHandler('push', push)
     # 显示最早的一条信息
     earliest_msg_handler = CommandHandler('emsg', earliest_msg)
     # 删除最新的一条信息
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     # 删除转存内容 或回复不删
     application.add_handler(CallbackQueryHandler(clear))
 
-    application.add_handler(forward_handler)
+    application.add_handler(push_handler)
     application.add_handler(earliest_msg_handler)
     application.add_handler(delete_msg_handler)
     application.add_handler(shutdown_handler)
