@@ -17,6 +17,7 @@ parser.add_argument('--bot_token', required=True, help='Bot token')
 parser.add_argument('--push_dir', required=True, help='push directory')
 parser.add_argument('--domain', required=True, help='domain')
 parser.add_argument('--path', required=False, default='default_path', help='path of URL')
+parser.add_argument('--exec', required=False, default='', help='Execute a command after push')
 
 # 解析命令行参数
 args = parser.parse_args()
@@ -27,6 +28,8 @@ bot_token = args.bot_token
 push_dir = args.push_dir   # 转发目录
 domain = args.domain   # 查看转存内容的网址的域名
 netstr = args.path
+# 在发送 \push 指令后，执行一个命令，设计用于自定义推送，比如 curl 到 webnote
+command2exec = args.exec
 # 指定 JSON 文件路径
 json_file = 'path_dict.json'
 
