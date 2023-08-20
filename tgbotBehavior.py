@@ -7,6 +7,7 @@ import re
 import os
 import random
 import string
+import subprocess
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -92,6 +93,13 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=update.effective_chat.id, text='transfer done. 转存完成')
 
 
+# 执行命令，输入 bash 中的命令 command2exec 和要传输的数据 data
+def exec_command(command2exec, datafile):
+    actual_command = command2exec.format(contentfile=datafile)
+    print(actual_command)
+    subprocess.call(actual_command, shell=True)
+
+
 # 推送到
 async def push(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -111,13 +119,26 @@ async def push(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except FileNotFoundError:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="请点一下 /start ，再尝试推送")
         return
+    all_stored = stored + stored_url
     with open(save_file, 'a', encoding='utf-8') as f:
-        f.write(stored + stored_url)
-
-    # 给出网址链接
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"push done. "
-                                                                          f"please visit {config.domain}{netstr}\n"
-                                                                          f"推送完成，访问上面网址查看")
+        f.write(all_stored)
+    # 如果有指定外部命令，则执行命令
+    if config.command2exec:
+        try:
+            exec_command(config.command2exec, save_file)
+            # 删除文件 save_file
+            os.remove(save_file)
+            # 给出网址链接，只有 curl --data "text={content}" https://forward.vfly.app/try 这种格式才能提取出
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"push done. "
+                                                                                  f"please visit {config.command2exec.split()[-1]}\n"
+                                                                                  f"推送完成，访问上面网址查看")
+        except:
+            print("something wrong about exec_command")
+    else:
+        # 如果没有外部指令，给出访问本地文件的网址
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"push done. "
+                                                                              f"please visit {config.domain}{netstr}\n"
+                                                                              f"推送完成，访问上面网址查看")
 
     # 制作对话内的键盘，第一个是专门的结构，第二个函数是将这个结构转成
     inline_kb = [

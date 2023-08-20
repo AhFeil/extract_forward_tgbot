@@ -8,7 +8,7 @@ Telegram 上有很多优秀的频道每天更新开源、科技等信息，可�
 因此我编写了这个转发机器人，目前仅提取文本信息转发。
 
 
-## 它的工作流程：
+## 它的最基本使用：
 1. 把消息转存给它（只支持纯文本消息和图片附带消息那种），或者直接发消息
 2. 它会提取其中的文本和内链网址并将之存在文件里，内链网址会按照顺序放到文本后面。
 3. 发送命令 `/push` ，它会将上面文件里的全部内容复制到另一个方便访问的文件中，并返回访问网址，目前用的是 [网页记事本](https://github.com/pereorga/minimalist-web-notepad)，访问对应网页就能看到。
@@ -41,6 +41,7 @@ Telegram 上有很多优秀的频道每天更新开源、科技等信息，可�
 6. `/set`：设置网址路径。在指令后空格，输入字符，仅字母数字，3至26位。若字符串为 random，则恢复随机路径
 7. `/clear`：清除保存的所有消息
 
+除此之外，自部署还可以在发送 `/push` 后执行自定义的命令，比如使用 curl 将存的内容放入远程的 webnote，具体请看下面的部署流程。
 
 ## 代办
 1. 改用数据库存储 SQLite
@@ -69,7 +70,7 @@ cd extract_forward_tgbot && mkdir backup forward_message # 创建备份目录和
 
 安装环境和依赖（ Python versions 3.8+ ）
 ```sh
-sudo apt install python3 python3-pip
+sudo apt install python3 python3-pip # curl
 pip3 install -r requirements.txt
 ```
 
@@ -81,6 +82,7 @@ pip3 install -r requirements.txt
 --push_dir /var/www/webnote/_tmp/ \
 --domain https://forward.vfly.app/ \
 --path push_from_tg
+# --exec "curl --data-urlencode text@{contentfile} https://forward.vfly.app/try"
 ```
 
 这里，
@@ -89,6 +91,8 @@ pip3 install -r requirements.txt
 - push_dir，推送时，将存储的信息保存到，这个目录下的文件中
 - domain，网页记事本的网址部分
 - path，网页记事本的路径部分。如上面的例子，最终推送网页的地址是 [https://forward.vfly.app/push_from_tg](https://forward.vfly.app/push_from_tg) 。
+- exec，在发送 \push 指令后，执行一个命令，设计用于自定义推送，比如 curl 到 webnote。 {contentfile} 是存储转存内容的文本文件。
+
 
 详细流程，参考 [【部署流程】之 Telegram 转发机器人](https://blog.vfly2.com/2023/08/deployment-process-extract_forward_tgbot/) 。
 
