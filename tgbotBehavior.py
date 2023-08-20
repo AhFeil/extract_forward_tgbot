@@ -50,16 +50,19 @@ def extract_urls(update: Update):
 async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     target_file = update.effective_chat.id
     store_file = config.store_dir + str(target_file)
-    rec_time = str(datetime.datetime.now())
+    rec_time = (str(datetime.datetime.now()))[5:-7]
 
+
+    message = update.message
+    # 从哪里转发的
+    from_where = message.forward_from_chat.title if message.forward_from_chat else "yourself"
+    from_where_username = message.forward_from_chat.username if message.forward_from_chat else "yourself"
+    message_id = message.forward_from_message_id if message.forward_from_chat else "no"
+    direct_url = "so can not being accessed directly" if from_where == "yourself" else f"  https://t.me/{from_where_username}/{message_id}"
+    line_center_content = rec_time + " from " + from_where + direct_url
     # 对指定频道进行特殊处理，目前是对指定频道只提取网址。
     # 先保证只有转发的才会触发这一条
-    message = update.message
     if message.forward_from_chat and message.forward_from_chat.username in config.channel:
-        # forward_chat = update.message.forward_from_chat   # 记录，可能没有 username 而是 title
-        # username = forward_chat.username if forward_chat.username else forward_chat.title
-        # # print(f"转发消息的来源用户名：{username}")
-        # if username in config.channel:
         url = extract_urls(update=update)
         with open(store_file + '_url' + '.txt', 'a', encoding='utf-8') as f:
             f.write('\n'.join(filter(None, url)) + '\n')
@@ -80,7 +83,7 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 link.append(i.url)
         # print(content)
         element = '\n'
-        saved_content = rec_time.center(80, '-') + '\n' + content + '\n' + element.join(filter(None, link)) + '\n\n'
+        saved_content = line_center_content.center(80, '-') + '\n' + content + '\n' + element.join(filter(None, link)) + '\n\n'
 
         # 保存到文件中
         with open(store_file + '.txt', 'a', encoding='utf-8') as f:
