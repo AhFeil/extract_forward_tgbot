@@ -33,6 +33,7 @@ store_dir = './forward_message/'   # 存储 转存（forward）消息 的目录
 backupdir = './backup/'   # 绝对路径自然搜索以 / 开头，相对路径要以 ./ 开头 ,以 '/' 结尾
 
 
+# 下面跟机器人没什么关系，主要作用方便开发，如果在 Windows ，则说明是开发环境，配置代理和修改一些变量的值，如果是 Linux，就是生产环境
 class Environment(Enum):
     WINDOWS = 1
     LINUX = 0

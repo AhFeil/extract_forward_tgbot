@@ -1,15 +1,5 @@
 """
-0.15
-添加根据频道只抽取url
-自动根据系统切换一些参数，无需部署时手动
-保存时询问是否清除，修复bug：A姐发的是纯文本
-0.16  单用户以奇数
-增加requirements.txt，无限个backup，两个保存文件分别显示数量
-0.17   删除最新添加的一条会返回文本，可以实现外显链接，
-
-0.21 多用户版本以偶数开始
-保存的时候，后面加自定义的网址链接
-24小时内会是占用时间，别人不可以再用  单独一个命令设置网址
+路由和注册
 """
 
 import sys
@@ -17,7 +7,8 @@ import sys
 from telegram import Update
 from telegram.ext import filters, MessageHandler, ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
-import config   # print(config.ENVIRONMENT)  # 打印ENVIRONMENT的值
+import config
+# 从 tgbotBehavior.py 导入定义机器人动作的函数
 from tgbotBehavior import start, transfer, clear, push, unknown, earliest_msg, sure_clear, delete_last_msg
 
 
@@ -69,6 +60,6 @@ if __name__ == '__main__':
     unknown_handler = MessageHandler(filters.COMMAND, unknown)
     application.add_handler(unknown_handler)
 
-    # 启动
-    application.run_polling()
+    # 启动，直到按 Ctrl-C
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
 
