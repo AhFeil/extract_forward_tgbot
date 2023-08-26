@@ -78,7 +78,7 @@ pip3 install -r requirements.txt
 ```sh
 /usr/bin/python3 ~/extract_forward_tgbot/extract_forward_tgbot.py \
 --chat_id 2111111114 \
---bot_token 6111111110:AAxxxxxxxxxxxxxx9iGxxLa_atxxxxxxuNU \
+--bot_token 6111111110:AAxxxxxvfly2xxxx9iGxxLa_atxxcomxuNU \
 --push_dir /var/www/webnote/_tmp/ \
 --domain https://forward.vfly.app/ \
 --path push_from_tg
@@ -93,6 +93,7 @@ pip3 install -r requirements.txt
 - path，网页记事本的路径部分。如上面的例子，最终推送网页的地址是 [https://forward.vfly.app/push_from_tg](https://forward.vfly.app/push_from_tg) 。
 - exec，在发送 \push 指令后，执行一个命令，设计用于自定义推送，比如 curl 到 webnote。 {contentfile} 是存储转存内容的文本文件。
 
+> 目前，如果提供了 exec 参数，转存内容会保存到文件中，但随后就会被删除，也就是 path, domain, push_dir 失去效果，但依然要填写，且 push_dir 要是能访问的路径
 
 详细流程，参考 [【部署流程】之 Telegram 转发机器人](https://blog.vfly2.com/2023/08/deployment-process-extract_forward_tgbot/) 。
 
