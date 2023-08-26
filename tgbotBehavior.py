@@ -53,7 +53,6 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     store_file = config.store_dir + str(target_file)
     rec_time = (str(datetime.datetime.now()))[5:-7]
 
-
     message = update.message
     # 从哪里转发的
     from_where = message.forward_from_chat.title if message.forward_from_chat else "yourself"
@@ -69,22 +68,22 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f.write('\n'.join(filter(None, url)) + '\n')
         await context.bot.send_message(chat_id=update.effective_chat.id, text='url saved.')
     else:   # 通用规则，先提取文本，再把内联网址按顺序列在后面
-        link = []
+        link = ['']
 
         # 提取内容
         if update.message.text:
             content = update.message.text
             search_link = update.message.entities
-            for i in search_link:
-                link.append(i.url)
         else:
             content = update.message.caption
             search_link = update.message.caption_entities
-            for i in search_link:
-                link.append(i.url)
-        # print(content)
+        # 提取内联网址
+        for i in search_link:
+            link.append(i.url)
+        # 有 bug ，对于转发的无内联网址的图片消息，会报错 TypeError: can only concatenate str (not "NoneType") to str ，不理解
+        # 发送纯文本又不报错
         element = '\n'
-        saved_content = line_center_content.center(80, '-') + '\n' + content + '\n' + element.join(filter(None, link)) + '\n\n'
+        saved_content = '-' * 27 + line_center_content.center(80, '-') + '\n' + content + '\n' + element.join(filter(None, link)) + '\n\n'
 
         # 保存到文件中
         with open(store_file + '.txt', 'a', encoding='utf-8') as f:
@@ -218,7 +217,7 @@ async def earliest_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     with open(store_file + '.txt', 'r', encoding='utf-8') as f, \
             open(store_file + '_url.txt', 'r', encoding='utf-8') as f_url:
-        # 如果文件为空(读第一行,换行不算空)
+        # 如果两个文件都为空
         if not f.readline() and not f_url.readline():
             await context.bot.send_message(chat_id=update.effective_chat.id, text="You don't have any message. "
                                                                                   "你没有任何数据。")
@@ -237,7 +236,8 @@ async def earliest_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 msg_count += 1
         # 文件指针回到开头读首条数据时间
         f.seek(0)
-        first_date = f.read(46)[27:]
+        first_line = f.readline().strip()
+        first_date = first_line.strip('-')
 
         # 统计网址数量，会自动跳过空行
         for line in f_url:
@@ -265,6 +265,7 @@ async def delete_last_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return 0
 
         # 先全部读取，从倒数第二行开始判断
+        f.seek(0)
         str_list = f.readlines()
         i = -2
         while True:
@@ -279,16 +280,8 @@ async def delete_last_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         last_message = ''.join(last_lines)
         # print(last_message)
 
-    with open(store_file, 'a+', encoding='utf-8') as f:
-        # 删除
-        last_length = 0
-        # 获得要开始删除的位置，以字节计，总文件字节 - 要删除的字节 - 行（行尾的神秘符号？）
-        for i in last_lines:
-            last_length += len(i.encode())
-        size = os.path.getsize(store_file) - last_length - len(last_lines)
-        size = 0 if size < 0 else size
-        print(size)
-        f.truncate(size)
+    with open(store_file, 'w', encoding='utf-8') as f:
+        f.writelines(str_list[:i])
 
     # 发送到tg
     await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Here is the last message you saved\n'
