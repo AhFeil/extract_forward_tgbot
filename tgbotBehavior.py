@@ -95,7 +95,6 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # 执行命令，输入 bash 中的命令 command2exec 和要传输的数据 data
 def exec_command(command2exec, datafile):
     actual_command = command2exec.format(contentfile=datafile)
-    print(actual_command)
     subprocess.call(actual_command, shell=True)
 
 
