@@ -60,8 +60,7 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message_id = message.forward_from_message_id if message.forward_from_chat else "no"
     direct_url = "so can not being accessed directly" if from_where == "yourself" else f"  https://t.me/{from_where_username}/{message_id}"
     line_center_content = rec_time + " from " + from_where + direct_url
-    # 对指定频道进行特殊处理，目前是对指定频道只提取网址。
-    # 先保证只有转发的才会触发这一条
+    # 对于转发自指定频道的消息进行特殊处理，目前是对指定频道只提取网址。
     if message.forward_from_chat and message.forward_from_chat.username in config.channel:
         url = extract_urls(update=update)
         with open(store_file + '_url' + '.txt', 'a', encoding='utf-8') as f:
@@ -82,12 +81,18 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
             link.append(i.url)
         # 有 bug ，对于转发的无内联网址的图片消息，会报错 TypeError: can only concatenate str (not "NoneType") to str ，不理解
         # 发送纯文本又不报错
-        element = '\n'
-        saved_content = '-' * 27 + line_center_content.center(80, '-') + '\n' + content + '\n' + element.join(filter(None, link)) + '\n\n'
 
-        # 保存到文件中
-        with open(store_file + '.txt', 'a', encoding='utf-8') as f:
-            f.write(saved_content)
+        # 仅一行且 http 开头的内容，放在 _url 中
+        if '\n' not in content[0:-1] and content[0:4] == "http":
+            with open(store_file + '_url' + '.txt', 'a', encoding='utf-8') as f:
+                f.write(content + '\n')
+        else:
+            element = '\n'
+            saved_content = '-' * 27 + line_center_content.center(80, '-') + '\n' + content + '\n' + element.join(filter(None, link)) + '\n\n'
+
+            # 保存到文件中
+            with open(store_file + '.txt', 'a', encoding='utf-8') as f:
+                f.write(saved_content)
 
         await context.bot.send_message(chat_id=update.effective_chat.id, text='transfer done. 转存完成')
 
