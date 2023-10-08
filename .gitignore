@@ -8,6 +8,7 @@ __pycache__/
 *.so
 
 #mine
+test_pillow.py
 backup/
 outdate/
 single/
