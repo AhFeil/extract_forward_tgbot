@@ -9,7 +9,7 @@ from telegram.ext import filters, MessageHandler, ApplicationBuilder, CommandHan
 
 import config
 # 从 tgbotBehavior.py 导入定义机器人动作的函数
-from tgbotBehavior import start, transfer, clear, push, unknown, earliest_msg, sure_clear, delete_last_msg
+from tgbotBehavior import start, transfer, clear, push, unknown, earliest_msg, sure_clear, delete_last_msg, image_get
 
 
 # 关闭机器人，这个只能在这，因为 updater 和 sys
@@ -31,8 +31,10 @@ if __name__ == '__main__':
     start_handler = CommandHandler('start', start)
     # 转存
     transfer_handler = MessageHandler((~filters.COMMAND), transfer)
-    # # 转存含图片的
-    # transfer_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), transfer)
+    # 处理含图片的
+    # image_process_handler = MessageHandler(filters.PHOTO, image_process)
+    # 处理图片
+    image_get_handler = CommandHandler('image', image_get)
     # 确认删除转存内容
     sure_clear_handler = CommandHandler('clear', sure_clear)
     # 推送到
@@ -47,6 +49,7 @@ if __name__ == '__main__':
     # 注册 start_handler ，以便调度
     application.add_handler(start_handler)
     application.add_handler(transfer_handler)
+    application.add_handler(image_get_handler)
     application.add_handler(sure_clear_handler)
     # 删除转存内容 或回复不删
     application.add_handler(CallbackQueryHandler(clear))

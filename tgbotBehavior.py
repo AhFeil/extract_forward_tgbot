@@ -9,10 +9,11 @@ import random
 import string
 import subprocess
 
-from telegram import Update
+from telegram import Update, Bot
 from telegram.ext import ContextTypes
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
+from process_images import add_text, merge_multi_images, generate_gif, open_image_from_various
 import config
 
 
@@ -68,9 +69,22 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f.write('\n'.join(filter(None, url)) + '\n')
         await context.bot.send_message(chat_id=update.effective_chat.id, text='url saved.')
     elif message.forward_from_chat and message.forward_from_chat.username in config.image_channel:
-        image_list = []
-        image_list.append(message.photo[-1]['file_id'])
-        print(image_list)
+                                               # 有不足，只能处理带图片的，以后重构修
+        userid_str = str(target_file)
+        file_id = message.photo[-1].file_id
+        if config.image_list.get(userid_str):
+            config.image_list.get(userid_str).append(file_id)
+        else:   # 若没有对应列表，先创建，再添加
+            config.image_list[userid_str] = []
+            config.image_list[userid_str].append(file_id)
+
+        # 获得说明文字
+        userid_text_str = userid_str + "_text"
+        try:
+            text = update.message.caption.split("\n", 1)[0]
+            config.image_list[userid_text_str] = text
+        except:
+            text = False
 
     else:   # 通用规则，先提取文本，再把内联网址按顺序列在后面
         link = ['']
@@ -89,7 +103,7 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # 发送纯文本又不报错
 
         # 仅一行且 http 开头的内容，放在 _url 中
-        if '\n' not in content[0:-1] and content[0:4] == "http":
+        if content and content[0:4] == "http" and '\n' not in content:
             with open(store_file + '_url' + '.txt', 'a', encoding='utf-8') as f:
                 f.write(content + '\n')
         else:
@@ -101,6 +115,59 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f.write(saved_content)
 
         await context.bot.send_message(chat_id=update.effective_chat.id, text='transfer done. 转存完成')
+
+
+async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    指令 /image 调用此函数，这个函数根据用户id，取出其列表里图片id列表和说明文字，合成，然后发给用户
+    :return:
+    """
+    user_id = update.effective_chat.id
+    userid_str = str(user_id)
+    userid_text_str = userid_str + "_text"
+    duration_time = 3000   # 3s
+    middle_interval = 10   # 10 个像素
+    text = config.image_list.get(userid_text_str, "text_of_processed_image")
+    image_name = text[0:24]   # 以免说明文字太长
+
+    image_id_list = config.image_list.get(userid_str)
+    if image_id_list:   # 有且不为空 []
+        # 用于得到图片 URL
+        bot = Bot(token=config.bot_token)
+        image_url_list = []   # 存有图片网址的列表
+        for file_id in image_id_list:
+            the_file = await bot.get_file(file_id)
+            url = the_file.file_path
+            image_url_list.append(url)
+        image_str = '\n'.join(image_url_list)
+        print(image_str)
+        img_list = await open_image_from_various(image_url_list)
+
+        is_gif = False
+        # 根据图片数量，默认的行为
+        if len(image_id_list) == 1:
+            gif_io = add_text(img_list, text)
+        elif 1 < len(image_id_list) < 5:
+            gif_io = merge_multi_images(img_list, middle_interval)
+        else:   # 超过 4 个，GIF
+            is_gif = True
+            gif_io = generate_gif(img_list, duration_time)
+
+        # 清空列表
+        config.image_list[userid_str].clear()
+        if is_gif:
+            image_name += ".gif"
+            await context.bot.send_animation(chat_id=update.effective_chat.id, animation=gif_io, filename=image_name)
+        else:
+            image_name += ".png"
+            await context.bot.send_photo(chat_id=update.effective_chat.id, photo=gif_io, filename=image_name)
+
+    else:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="no image left")
+
+
+async def image_process(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    pass
 
 
 # 执行命令，输入 bash 中的命令 command2exec 和要传输的数据 data

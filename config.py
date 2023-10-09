@@ -31,10 +31,15 @@ command2exec = args.exec
 
 # 预先声明变量
 channel = ['abskoop']   # 应用特殊提取规则的频道
-image_channel = ['woshadiao']   # 应用特殊提取规则，会考虑图片的频道
+image_channel = ['woshadiao']   # 对里面的频道应用特殊提取规则，也就是会考虑图片
 manage_id = [chat_id, '1111111111']   # 管理员 id
 store_dir = './forward_message/'   # 存储 转存（forward）消息 的目录
 backupdir = './backup/'   # 绝对路径自然搜索以 / 开头，相对路径要以 ./ 开头 ,以 '/' 结尾
+
+
+
+# 图片列表和其说明文字   {'userid':['image1_url','image2_url'], 'userid_text':'text', etc} 结构是这样的，图片列表，说明字符串
+image_list = {}
 
 
 # 下面跟机器人没什么关系，主要作用方便开发，如果在 Windows ，则说明是开发环境，配置代理和修改一些变量的值，如果是 Linux，就是生产环境
