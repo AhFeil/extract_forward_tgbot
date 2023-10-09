@@ -60,12 +60,18 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message_id = message.forward_from_message_id if message.forward_from_chat else "no"
     direct_url = "so can not being accessed directly" if from_where == "yourself" else f"  https://t.me/{from_where_username}/{message_id}"
     line_center_content = rec_time + " from " + from_where + direct_url
+
     # 对于转发自指定频道的消息进行特殊处理，目前是对指定频道只提取网址。
     if message.forward_from_chat and message.forward_from_chat.username in config.channel:
         url = extract_urls(update=update)
         with open(store_file + '_url' + '.txt', 'a', encoding='utf-8') as f:
             f.write('\n'.join(filter(None, url)) + '\n')
         await context.bot.send_message(chat_id=update.effective_chat.id, text='url saved.')
+    elif message.forward_from_chat and message.forward_from_chat.username in config.image_channel:
+        image_list = []
+        image_list.append(message.photo[-1]['file_id'])
+        print(image_list)
+
     else:   # 通用规则，先提取文本，再把内联网址按顺序列在后面
         link = ['']
 
