@@ -3,13 +3,13 @@ import glob
 
 from PIL import Image
 
-from process_images import generate_gif, merge_multi_images, add_text
+from process_images import generate_gif, merge_multi_images, add_text, open_image_from_various
 
 
 # 指定图片文件夹路径
 # folder_path = 'images'   # 生成 GIF 的图片例子
-folder_path = os.path.join('images', 'text_images')   # 补充字的的图片例子
-# folder_path = os.path.join('images', 'merge_images')   # 合并的图片例子
+# folder_path = os.path.join('images', 'text_images')   # 补充字的的图片例子
+folder_path = os.path.join('images', 'merge_images')   # 合并的图片例子
 
 # 获取所有图片文件名，包括jpg, png格式的图片
 image_files = glob.glob(os.path.join(folder_path, "*.[jJ][pP][gG]")) \
@@ -18,9 +18,13 @@ image_files = glob.glob(os.path.join(folder_path, "*.[jJ][pP][gG]")) \
 # for image_file in image_files:
 #     print(image_file)
 
-img_list = [Image.open(image_file) for image_file in image_files]
+# 网络图片
+# image_files = ["https://ib.ahfei.blog:443/imagesbed/202309052211621-23-09-56.png"]
+
+img_list = await open_image_from_various(image_files)
 duration_time = 3000
 middle_interval = 10
+text = "示例文字"
 
 # 测试
 # GIF
@@ -30,9 +34,9 @@ middle_interval = 10
 #     f.write(gif_io.read())
 
 # 合并
-# gif_io = merge_multi_images(img_list, middle_interval)
+gif_io = merge_multi_images(img_list, middle_interval)
 # 添加文本
-gif_io = add_text(img_list)
+# gif_io = add_text(img_list, text)
 
 # 关闭图像文件
 for img in img_list:
