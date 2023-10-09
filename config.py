@@ -31,6 +31,7 @@ command2exec = args.exec
 
 # 预先声明变量
 channel = ['abskoop']   # 应用特殊提取规则的频道
+image_channel = ['woshadiao']   # 应用特殊提取规则，会考虑图片的频道
 manage_id = [chat_id, '1111111111']   # 管理员 id
 store_dir = './forward_message/'   # 存储 转存（forward）消息 的目录
 backupdir = './backup/'   # 绝对路径自然搜索以 / 开头，相对路径要以 ./ 开头 ,以 '/' 结尾
