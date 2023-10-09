@@ -1,10 +1,34 @@
-import io
+import io, os
+from urllib.parse import urlparse
+import httpx
 
 from PIL import Image, ImageDraw, ImageFont
 
 """
 返回的都是字节流 gif_io = io.BytesIO()
 """
+
+
+async def open_image_from_various(image_dir_list):
+    """
+    根据传入图片路径的不同，如本地路径，网络路径，使用不同方式打开图片，并返回 Image 列表
+    由于这个函数现在是异步的，所以需要使用await关键字来调用它。
+    :param image_dir_list:
+    :return:
+    """
+    path = image_dir_list[0]
+    if os.path.exists(path):
+        return [Image.open(image_file) for image_file in image_dir_list]
+    elif urlparse(path).scheme in ('http', 'https'):
+        img_list = []
+        for url in image_dir_list:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url)
+                img_list.append(Image.open(io.BytesIO(response.content)))
+        return img_list
+    else:
+        print("Unknown")
+        return "Unknown"
 
 
 def split_text(text, font_size, max_width):
