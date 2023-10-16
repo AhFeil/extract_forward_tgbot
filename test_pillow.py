@@ -34,7 +34,7 @@ duration_time = 3000
 middle_interval = 10
 text = "#ll示例文字"
 
-# 测试
+# 测试（这里用 if）
 # GIF
 # gif_io = generate_gif(img_list, duration_time)
 # # 保存到文件
