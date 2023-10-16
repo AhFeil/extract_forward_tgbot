@@ -68,7 +68,8 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
         with open(store_file + '_url' + '.txt', 'a', encoding='utf-8') as f:
             f.write('\n'.join(filter(None, url)) + '\n')
         await context.bot.send_message(chat_id=update.effective_chat.id, text='url saved.')
-    elif message.forward_from_chat and message.forward_from_chat.username in config.image_channel:
+    # 由指定频道转发的消息或自己发送带图片的消息
+    elif (message.forward_from_chat and message.forward_from_chat.username in config.image_channel) or (not message.forward_from_chat and message.photo):
                                                # 有不足，只能处理带图片的，以后重构修
         userid_str = str(target_file)
         file_id = message.photo[-1].file_id
@@ -124,6 +125,15 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     user_id = update.effective_chat.id
     userid_str = str(user_id)
+    args = context.args   # 字符串列表
+    if args:   # 暂时只支持修改说明文字
+        userid_text_str = userid_str + "_text"
+        text_in_args = args[0]
+        config.image_list[userid_text_str] = text_in_args
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"have change text to {text_in_args}")
+        return
+
+    # 不带参数则进行合成图片步骤
     userid_text_str = userid_str + "_text"
     duration_time = 3000   # 3s
     middle_interval = 10   # 10 个像素
@@ -153,14 +163,14 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
             is_gif = True
             gif_io = generate_gif(img_list, duration_time)
 
-        # 清空列表
-        config.image_list[userid_str].clear()
+        config.image_list[userid_str].clear()   # 清空列表
         if is_gif:
             image_name += ".gif"
             await context.bot.send_animation(chat_id=update.effective_chat.id, animation=gif_io, filename=image_name)
         else:
             image_name += ".png"
             await context.bot.send_photo(chat_id=update.effective_chat.id, photo=gif_io, filename=image_name)
+        gif_io = None
 
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="no image left")
