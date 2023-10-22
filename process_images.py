@@ -150,7 +150,53 @@ def generate_gif(image_list, duration_time = 3000):
     return gif_io
 
 
-def merge_multi_images(image_list, middle_interval = 10):
+def resize_images(image_list, difference_radio, height_or_width):
+    """
+    修改原始列表
+    拉伸图片，若尺寸比率小于 difference_radio，则拉伸。若传入 0 ，则代表不拉伸
+    并返回拉伸后的高和宽的列表
+    """
+    # 初始化宽度和高度列表
+    widths = []
+    heights = []
+    # 获取尺寸
+    for image_file in image_list:
+        width, height = image_file.size
+        widths.append(width)
+        heights.append(height)
+
+    width_max = max(widths)   # 用以拉伸的，默认的小的拉大
+    height_max = max(heights)
+
+    if height_or_width == "height":
+        # 找出与最大图像相差太大的，image_list 的顺序和高、宽的顺序一致，因此下标代表同一张照片
+        small_images = [i for i, h in enumerate(heights) if h / height_max < difference_radio]
+        # 把 height 拉齐
+        for i in small_images:
+            anended_height = height_max
+            anended_width = int(widths[i] * anended_height / heights[i])
+            # 修正后的，覆盖原始列表
+            image_list[i] = image_list[i].resize((anended_width, anended_height))
+            widths[i] = anended_width
+            heights[i] = anended_height
+    elif height_or_width == "width":
+        # 找出与最大图像相差太大的，image_list 的顺序和高、宽的顺序一致，因此下标代表同一张照片
+        small_images = [i for i, w in enumerate(widths) if w / width_max < difference_radio]
+        # 把 height 拉齐
+        for i in small_images:
+            anended_width = width_max
+            anended_height = int(heights[i] * anended_width / widths[i])
+            # 修正后的，覆盖原始列表
+            image_list[i] = image_list[i].resize((anended_width, anended_height))
+            widths[i] = anended_width
+            heights[i] = anended_height
+    else:
+        print("either height nor width")
+
+    return widths, heights
+
+
+def merge_multi_images(image_list, middle_interval=10):
     """
     合并多个图片为一张。之间会有间隔，图片中间的间隔，如果是 4 个图片形成一个十字
     如果有 2 或 3 个，根据长宽比，横排或竖排
@@ -162,17 +208,20 @@ def merge_multi_images(image_list, middle_interval = 10):
     # 初始化宽度和高度列表
     widths = []
     heights = []
-
     # 获取尺寸
     for image_file in image_list:
         width, height = image_file.size
         widths.append(width)
         heights.append(height)
+    # 用来比较，宽和高
 
     if image_amount in {2, 3}:
+
         # 根据图片宽高，判断横排或竖排
         if sum(heights) > sum(widths):
-            # 瘦长型，竖排 ||| 。   创建一个新的空白图像，宽取和，高取最大
+            # 瘦长型，竖排 ||| 。   height 应该一致，先拉伸，并返回拉伸后的高和宽的列表
+            widths, heights = resize_images(image_list, 0.9, "height")
+            # 创建一个新的空白图像，宽取和，高取最大
             new_image_width = sum(widths) + middle_interval * (image_amount-1)
             new_image_height = max(heights)
             new_image = Image.new('RGB', (new_image_width, new_image_height))
@@ -180,7 +229,9 @@ def merge_multi_images(image_list, middle_interval = 10):
             for i in range(image_amount):
                 new_image.paste(image_list[i], (sum(widths[0:i]) + i*middle_interval, 0))
         else:
-            # 矮胖型，横排 三。   创建一个新的空白图像，宽取最大，高取和
+            # 矮胖型，横排 三。   width 应该一致，先拉伸
+            widths, heights = resize_images(image_list, 0.9, "width")
+            # 创建一个新的空白图像，宽取最大，高取和
             new_image_width = max(widths)
             new_image_height = sum(heights) + middle_interval * (image_amount-1)
             new_image = Image.new('RGB', (new_image_width, new_image_height))
@@ -189,6 +240,8 @@ def merge_multi_images(image_list, middle_interval = 10):
                 new_image.paste(image_list[i], (0, sum(heights[0:i]) + i * middle_interval))
 
     elif image_amount == 4:
+        # 拉伸图片，并返回高和宽的列表
+        # widths, heights = resize_images(image_list, 0, )
 
         # 创建一个新的空白图像，大小为两张图像的最大尺寸之和
         new_image_height = max( (heights[0]+heights[2]), (heights[1]+heights[3]) ) + middle_interval
