@@ -8,12 +8,13 @@ import os
 import random
 import string
 import subprocess
+import ast
 
 from telegram import Update, Bot
 from telegram.ext import ContextTypes
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from process_images import add_text, merge_multi_images, generate_gif, open_image_from_various
+from process_images import add_text, merge_multi_images, generate_gif, open_image_from_various, merge_images_according_array
 import config
 
 
@@ -126,15 +127,37 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
     userid_str = str(user_id)
     args = context.args   # 字符串列表
-    if args:   # 暂时只支持修改说明文字
-        userid_text_str = userid_str + "_text"
-        text_in_args = args[0]
-        config.image_list[userid_text_str] = text_in_args
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"have change text to {text_in_args}")
+    if args:   # 若存在参数，则不执行 if 代码块下面的内容
+        if args[0] == "array":
+            # 第一个参数若是 array，代表第二个参数是位置排列的数组
+            try:
+                actual_tuple = ast.literal_eval(args[1])
+            except ValueError:
+                await context.bot.send_message(chat_id=update.effective_chat.id,
+                                               text=f"wrong array format, 要像这样 (1,2),(0,3)")
+            except SyntaxError:
+                await context.bot.send_message(chat_id=update.effective_chat.id,
+                                               text=f"notice blank,brackets , 别有空格，注意括号成对")
+            else:
+                userid_array_str = userid_str + "_array"
+                config.image_option[userid_array_str] = actual_tuple
+                await context.bot.send_message(chat_id=update.effective_chat.id,
+                                               text=f"have change array to {config.image_option[userid_array_str]}")
+
+        elif args[0] == "time":
+            # 第一个参数若是 time，代表第二个参数是 gif 的每个图片持续时间
+            pass
+        else:
+            # 其他任何情况，都只是作为修改说明文字
+            userid_text_str = userid_str + "_text"
+            text_in_args = args[0]
+            config.image_list[userid_text_str] = text_in_args
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"have change text to {text_in_args}")
         return
 
     # 不带参数则进行合成图片步骤
     userid_text_str = userid_str + "_text"
+    userid_array_str = userid_str + "_array"
     duration_time = 3000   # 3s
     middle_interval = 10   # 10 个像素
     text = config.image_list.get(userid_text_str, "text_of_processed_image")
@@ -142,6 +165,7 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     image_id_list = config.image_list.get(userid_str)
     if image_id_list:   # 有且不为空 []
+        image_amount = len(image_id_list)   # 图片数量
         # 用于得到图片 URL
         bot = Bot(token=config.bot_token)
         image_url_list = []   # 存有图片网址的列表
@@ -154,14 +178,24 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
         img_list = await open_image_from_various(image_url_list)
 
         is_gif = False
-        # 根据图片数量，默认的行为
-        if len(image_id_list) == 1:
-            gif_io = add_text(img_list, text)
-        elif 1 < len(image_id_list) < 5:
-            gif_io = merge_multi_images(img_list, middle_interval)
-        else:   # 超过 4 个，GIF
-            is_gif = True
-            gif_io = generate_gif(img_list, duration_time)
+        array = config.image_option[userid_array_str]
+        if array:   # 如果指定了排列，就按指定的
+            array_image_amount = len([i for j in array for i in j if i > 0])
+            # 还需要检查是不是从 1 递增的
+            if not image_amount == array_image_amount:
+                await context.bot.send_message(chat_id=update.effective_chat.id,
+                                               text=f"排列数组里的图片数 {array_image_amount} 与实际图片数 {image_amount} 不一致，请检查")
+            # 若数量一致，可调用函数处理
+            gif_io = merge_images_according_array(img_list, middle_interval, array)
+            config.image_option[userid_array_str] = None
+        else:   # 根据图片数量，默认的行为
+            if image_amount == 1:
+                gif_io = add_text(img_list, text)
+            elif 1 < image_amount < 5:
+                gif_io = merge_multi_images(img_list, middle_interval)
+            else:   # 超过 4 个，GIF
+                is_gif = True
+                gif_io = generate_gif(img_list, duration_time)
 
         config.image_list[userid_str].clear()   # 清空列表
         if is_gif:

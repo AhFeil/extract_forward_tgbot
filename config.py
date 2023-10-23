@@ -40,6 +40,10 @@ backupdir = './backup/'   # 绝对路径自然搜索以 / 开头，相对路径�
 
 # 图片列表和其说明文字   {'userid':['image1_url','image2_url'], 'userid_text':'text', etc} 结构是这样的，图片列表，说明字符串
 image_list = {}
+# 与图片有关的选项，如排列方式，gif 的时间间隔等。 key 是用户 id + 描述字符，值是对应的内容。
+image_option = {}
+# 如排列方式，key 为 id_array，值是一个元组
+# 时间间隔，key 为 id_time，值是数字 秒
 
 
 # 下面跟机器人没什么关系，主要作用方便开发，如果在 Windows ，则说明是开发环境，配置代理和修改一些变量的值，如果是 Linux，就是生产环境
