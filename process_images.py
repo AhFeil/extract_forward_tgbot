@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 import httpx
 
 from PIL import Image, ImageDraw, ImageFont
+import numpy as np
 
 """
 返回的都是字节流 gif_io = io.BytesIO()
@@ -196,6 +197,56 @@ def resize_images(image_list, difference_radio, height_or_width):
     return widths, heights
 
 
+def transpose_images(image_list):
+    """
+    将图像列表，挨个转置。如果是单个图像，就先转化为列表
+    :param image_list:
+    :return:
+    """
+    not_list = False
+    # "image_list 必须是 list 类型"
+    if not isinstance(image_list, list):
+        not_list = True
+        image_list = [image_list]
+
+    transposed_image_list = []
+    for image_file in image_list:
+        array = np.array(image_file)   # 转为矩阵
+        transposed_array = array.transpose((1, 0, 2))   # 转置，但是不管颜色通道，如果 array.transpose()，还会将 RGB 转换为 BGR
+        transposed_image = Image.fromarray(transposed_array)   # 换回 Image 对象
+        transposed_image_list.append(transposed_image)
+    if not_list:
+        return transposed_image_list[0]
+    else:
+        return transposed_image_list
+
+
+def merge_images_horizontally(image_list, middle_interval):
+    """
+    把列表里的图像，横着合并
+    :param image_list:
+    :param middle_interval:
+    :return:
+    """
+    image_amount = len(image_list)
+    # 初始化宽度和高度列表
+    widths = []
+    heights = []
+    # 获取尺寸
+    for image_file in image_list:
+        width, height = image_file.size
+        widths.append(width)
+        heights.append(height)
+    # 创建一个新的空白图像，宽取和，高取最大
+    new_image_width = sum(widths) + middle_interval * (image_amount - 1)
+    new_image_height = max(heights)
+    new_image = Image.new('RGB', (new_image_width, new_image_height))
+    # 将图像粘贴到新的图像上
+    for i in range(image_amount):
+        new_image.paste(image_list[i], (sum(widths[0:i]) + i * middle_interval, 0))
+    return new_image
+
+
 def merge_multi_images(image_list, middle_interval=10):
     """
     合并多个图片为一张。之间会有间隔，图片中间的间隔，如果是 4 个图片形成一个十字
@@ -213,32 +264,20 @@ def merge_multi_images(image_list, middle_interval=10):
         width, height = image_file.size
         widths.append(width)
         heights.append(height)
-    # 用来比较，宽和高
 
     if image_amount in {2, 3}:
 
         # 根据图片宽高，判断横排或竖排
         if sum(heights) > sum(widths):
             # 瘦长型，竖排 ||| 。   height 应该一致，先拉伸，并返回拉伸后的高和宽的列表
-            widths, heights = resize_images(image_list, 0.9, "height")
-            # 创建一个新的空白图像，宽取和，高取最大
-            new_image_width = sum(widths) + middle_interval * (image_amount-1)
-            new_image_height = max(heights)
-            new_image = Image.new('RGB', (new_image_width, new_image_height))
-            # 将图像粘贴到新的图像上
-            for i in range(image_amount):
-                new_image.paste(image_list[i], (sum(widths[0:i]) + i*middle_interval, 0))
+            resize_images(image_list, 0.9, "height")
+            new_image = merge_images_horizontally(image_list, middle_interval)
         else:
-            # 矮胖型，横排 三。   width 应该一致，先拉伸
-            widths, heights = resize_images(image_list, 0.9, "width")
-            # 创建一个新的空白图像，宽取最大，高取和
-            new_image_width = max(widths)
-            new_image_height = sum(heights) + middle_interval * (image_amount-1)
-            new_image = Image.new('RGB', (new_image_width, new_image_height))
-            # 将图像粘贴到新的图像上
-            for i in range(image_amount):
-                new_image.paste(image_list[i], (0, sum(heights[0:i]) + i * middle_interval))
-
+            # 矮胖型，横排 三。 将图像列表每个都转置，处理后，再转回来，处理函数与瘦长型一致
+            image_list = transpose_images(image_list)
+            resize_images(image_list, 0.9, "height")
+            new_transpose_image = merge_images_horizontally(image_list, middle_interval)
+            new_image = transpose_images(new_transpose_image)
     elif image_amount == 4:
         # 拉伸图片，并返回高和宽的列表
         # widths, heights = resize_images(image_list, 0, )
