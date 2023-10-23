@@ -4,7 +4,7 @@ import asyncio
 
 from PIL import Image
 
-from process_images import generate_gif, merge_multi_images, add_text, open_image_from_various
+from process_images import generate_gif, merge_multi_images, add_text, open_image_from_various, merge_images_according_array
 
 
 # 指定图片文件夹路径
@@ -32,24 +32,30 @@ img_list = loop.run_until_complete(open_image_from_various(image_files))
 duration_time = 3000
 middle_interval = 10
 text = "#ll示例文字"
+array = (1,2,0),(3,0,4),(0,5,6)
 
-# 测试（这里用 if）
-if len(img_list) == 1:   # 添加文本
-    gif_io = add_text(img_list, text)
+# 测试
+if array:
+    gif_io = merge_images_according_array(img_list, middle_interval, array)
     with Image.open(gif_io) as new_image:
         new_image.show()
-elif len(img_list) in {2, 3, 4}:   # 合并
-    gif_io = merge_multi_images(img_list, middle_interval)
-    with Image.open(gif_io) as new_image:
-        new_image.show()
-elif len(img_list) > 4:   # GIF
-    gif_io = generate_gif(img_list, duration_time)
-    # 保存到文件
-    with open('my_gif.gif', 'wb') as f:
-        f.write(gif_io.read())
 else:
-    gif_io = None
-    print("check test")
+    if len(img_list) == 1:   # 添加文本
+        gif_io = add_text(img_list, text)
+        with Image.open(gif_io) as new_image:
+            new_image.show()
+    elif len(img_list) in {2, 3, 4}:   # 合并
+        gif_io = merge_multi_images(img_list, middle_interval)
+        with Image.open(gif_io) as new_image:
+            new_image.show()
+    elif len(img_list) > 4:   # GIF
+        gif_io = generate_gif(img_list, duration_time)
+        # 保存到文件
+        with open('my_gif.gif', 'wb') as f:
+            f.write(gif_io.read())
+    else:
+        gif_io = None
+        print("check test")
 
 # 关闭图像文件
 for img in img_list:

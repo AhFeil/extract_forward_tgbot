@@ -309,6 +309,109 @@ def merge_multi_images(image_list, middle_interval=10):
     return gif_io
 
 
+def merge_images_according_array(image_list, middle_interval=10, array=(1,2)):
+    image_amount = len(image_list)
+
+
+    # 初始化宽度和高度列表
+    widths = []
+    heights = []
+    # 获取尺寸
+    for image_file in image_list:
+        width, height = image_file.size
+        widths.append(width)
+        heights.append(height)
+
+    def list_rotate(lst):
+        for value in lst:
+            yield value
+    # 创建一个生成器
+    length = list_rotate([heights, widths])
+
+    # 无用了，保留一下
+    # array = (1, 2), (0, 3)
+    # n = len(array)
+    # transposed_array = [[0 for _ in range(n)] for _ in range(n)]  # 实际是列表
+    # for i, row in enumerate(array):
+    #     for j, element in enumerate(row):
+    #         transposed_array[j][i] = element
+    # print(transposed_array)
+
+    np_array = np.array(array)  # 使用numpy 转化 array 为二维数组，numpy的T属性得到其转置矩阵 array.T
+    # row_amount, column_amount = np_array.shape   # shape会返回一个元组，包含了每个维度的长度。
+    # 在二维数组中，第一个值代表行数，第二个值代表列数。行数就是每列的元素个数。  列是 column
+
+    max_row_list = []
+    rotate_array = np.copy(np_array)
+    # 得到图像阵列，每个维度最大的尺寸
+    for abstract_amount in np_array.shape:
+        # 若是二维，循环取行列；若是三维，也是循环取行列厚，这种
+        row_list = []
+        # abstract_amount 第一次是代表的行，这时计算不同列最大的高合适
+        rotate_array = rotate_array.T   # 这样相当取列
+        the_length = next(length)   # 第一次取全部的高 的值
+        for abstract_row in rotate_array:   # 得到每行最大的宽 组成的列表
+            # 取出每行元素的值，它是图片列表的下标，得到相应图片的某边的长度，再求和，就是每行某方向总长
+            row_sum = sum([the_length[i-1] for i in abstract_row if i])
+            row_list.append(row_sum)
+        # 得到某方向最终画幅的长度
+        new_image_length = max(row_list) + middle_interval*(abstract_amount-1)
+        max_row_list.append(new_image_length)   # 第一个元素是最终画幅的高，第二个是最终画幅的宽
+
+    # 创建一个新的空白图像，大小为两张图像的最大尺寸之和
+    new_image_height = max_row_list[0]
+    new_image_width = max_row_list[1]
+    new_image = Image.new('RGB', (new_image_width, new_image_height))
+
+    # 获取数组形状
+    shape = np_array.shape
+    # 创建新的数组，每个元素，包含原本的值和位置坐标
+    new_arr = [((i, j), np_array[i][j]) for j in range(shape[1]) for i in range(shape[0])]   # 改成一维列表
+    # new_arr = [[((i, j), np_array[i][j]) for j in range(shape[1])] for i in range(shape[0])]
+    # 对于 [(1, 2), (0, 3)]， 结果是 [ [((0, 0), 1), ((0, 1), 2)],   [((1, 0), 0), ((1, 1), 3)] ]
+    # 丢弃原本值是 0 的
+    # new_arr = [(position, index) for position, index in new_arr if index]
+
+    # 将图像粘贴到画幅 new_image 上
+    for position, index in new_arr:   # np_array 存的是图像下标和相对位置
+        i, j = position
+
+        x_length = 0
+        x_anend = 0
+        front_index = [(p, k) for p, k in enumerate(np_array[i]) if p < j]  # 得到前面（位置要比自身小）图片下标 k，
+        for m in front_index:
+            if m[1] == 0:   # 对于 0 ，也就是没图片的，要修正宽度，把那一列最宽的作为修正值
+                a_widths_list = [widths[width_index-1] for width_index in np_array.T[m[0]] if width_index]
+                x_anend += max(a_widths_list)
+        y_length = 0
+        y_anend = 0
+        up_index = [(p, k) for p, k in enumerate(np_array.T[j]) if p < i]
+        for m in up_index:
+            if m[1] == 0:   # 对于 0 ，也就是没图片的，要修正宽度，把那一列最宽的作为修正值
+                a_heights_list = [heights[height_index-1] for height_index in np_array[m[0]] if height_index]
+                y_anend += max(a_heights_list)
+
+        for _, front in front_index:   # 找到同一行的图片下标，图片的宽都加上
+            if front:   # 不能是 0，否则会把自己的宽也加上
+                x_length += widths[front-1]
+        for _, front in up_index:   # 找到同一行的图片下标，图片的宽都加上
+            if front:
+                y_length += heights[front-1]
+
+        x_length += middle_interval*j + x_anend
+        y_length += middle_interval*i + y_anend
+        new_image.paste(image_list[index-1], (x_length, y_length))
+
+    # 创建 BytesIO 对象以保存 GIF
+    gif_io = io.BytesIO()
+
+    # 保存到字节流
+    new_image.save(gif_io, 'PNG')
+
+    # 重置文件指针到开头
+    gif_io.seek(0)
+    # 返回 Image 对象（需要重新打开，因为我们目前只有字节流）
+    return gif_io
 
 
 
