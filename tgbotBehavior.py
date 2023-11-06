@@ -198,11 +198,11 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
         config.image_list[userid_str].clear()   # 清空列表
         if is_gif:
             image_name += ".gif"
-            await context.bot.send_animation(chat_id=update.effective_chat.id, animation=gif_io, filename=image_name)
+            # await context.bot.send_animation(chat_id=update.effective_chat.id, animation=gif_io, filename=image_name)   # 以动画发送会被压缩
+            await context.bot.send_document(chat_id=update.effective_chat.id, document=gif_io, filename=image_name)   # 但这个也不行，还是压缩后的
         else:
             image_name += ".png"
             await context.bot.send_photo(chat_id=update.effective_chat.id, photo=gif_io, filename=image_name)
-        gif_io = None
 
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="no image left")
