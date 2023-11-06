@@ -173,12 +173,10 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
             the_file = await bot.get_file(file_id)
             url = the_file.file_path
             image_url_list.append(url)
-        image_str = '\n'.join(image_url_list)
-        print(image_str)
-        img_list = await open_image_from_various(image_url_list)
+        img_list = await open_image_from_various(image_url_list, config.images_cache_dict)
 
         is_gif = False
-        array = config.image_option[userid_array_str]
+        array = config.image_option.get(userid_array_str)
         if array:   # 如果指定了排列，就按指定的
             array_image_amount = len([i for j in array for i in j if i > 0])
             # 还需要检查是不是从 1 递增的

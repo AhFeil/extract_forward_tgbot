@@ -6,7 +6,7 @@ import sys
 import logging
 import argparse
 import json
-
+from collections import OrderedDict
 
 # 创建一个解析器
 parser = argparse.ArgumentParser(description="Your script description")
@@ -84,6 +84,7 @@ else:
     ENVIRONMENT = Environment.OTHER
     sys.exit('Unknown system.')
 
+images_cache_dict = OrderedDict()
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
