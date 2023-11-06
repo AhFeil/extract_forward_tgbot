@@ -1,4 +1,6 @@
 import io, os
+from collections import OrderedDict
+
 from urllib.parse import urlparse
 import httpx
 
@@ -10,22 +12,40 @@ import numpy as np
 """
 
 
-async def open_image_from_various(image_dir_list):
+async def open_image_from_various(image_dir_list, cache=None):
     """
     根据传入图片路径的不同，如本地路径，网络路径，使用不同方式打开图片，并返回 Image 列表
     由于这个函数现在是异步的，所以需要使用await关键字来调用它。
     :param image_dir_list:
+    :param cache:   缓存，数据结构要是 OrderedDict()
     :return:
     """
     path = image_dir_list[0]
+    if cache is None:   # 若未指定缓存，则生成局部变量，等函数执行完也就清除了
+        cache = OrderedDict()
+
     if os.path.exists(path):
         return [Image.open(image_file) for image_file in image_dir_list]
     elif urlparse(path).scheme in ('http', 'https'):
         img_list = []
         for url in image_dir_list:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(url)
-                img_list.append(Image.open(io.BytesIO(response.content)))
+            base_name = urlparse(url).path.split("/")[-1]
+            # 检查缓存中是否存在图片数据
+            if base_name in cache:
+                img_list.append(cache[base_name])
+                print(f"{base_name} is in cache")
+            else:
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(url)
+                    image_data = Image.open(io.BytesIO(response.content))
+                    img_list.append(image_data)
+                    print(f"{url} has been downloaded, and will be added in cache")
+
+                    # 添加图片数据到缓存
+                    cache[base_name] = image_data
+                    # 删除最旧的键值对，如果缓存超过了20条
+                    if len(cache) > 20:
+                        cache.popitem(last=False)
         return img_list
     else:
         print("Unknown")
