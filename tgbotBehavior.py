@@ -4,11 +4,12 @@ tg机器人的所有命令行为（除了 shutdown）
 import datetime
 from time import time, localtime, strftime
 import re
-import os
+import os, io
 import random
 import string
 import subprocess
 import ast
+import zipfile
 
 from telegram import Update, Bot
 from telegram.ext import ContextTypes
@@ -198,8 +199,22 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
         config.image_list[userid_str].clear()   # 清空列表
         if is_gif:
             image_name += ".gif"
+            zip_name = image_name + '.zip'
+            zip_obj = io.BytesIO()
+            zipfilename = f"compressed-{update.effective_chat.id}.zip"
+            with zipfile.ZipFile(zip_obj, mode='w') as zf:
+                # 将 BytesIO 对象添加到 ZIP 文件中
+                zf.writestr(image_name, gif_io.getvalue())
+
             # await context.bot.send_animation(chat_id=update.effective_chat.id, animation=gif_io, filename=image_name)   # 以动画发送会被压缩
             await context.bot.send_document(chat_id=update.effective_chat.id, document=gif_io, filename=image_name)   # 但这个也不行，还是压缩后的
+            # 压缩再发送。直接把 BytesIO 给它，显示空的。先保存再发送倒是可以。 保存压缩包
+            with open(zipfilename, "wb") as zip_file:
+                zip_file.write(zip_obj.getvalue())
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"为了防止被 Telegram 压缩，下面发送 zip 压缩包格式，有需要自取解压")
+            with open(zipfilename, 'rb') as zip_file:
+                await context.bot.send_document(chat_id=update.effective_chat.id, document=zip_file, filename=zip_name)
+            os.remove(zipfilename)
         else:
             image_name += ".png"
             await context.bot.send_photo(chat_id=update.effective_chat.id, photo=gif_io, filename=image_name)
