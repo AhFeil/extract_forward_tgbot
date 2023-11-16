@@ -1,6 +1,8 @@
 import os.path
 import glob
 import asyncio
+import zipfile
+import io
 
 from PIL import Image
 
@@ -8,9 +10,9 @@ from process_images import generate_gif, merge_multi_images, add_text, open_imag
 
 
 # 指定图片文件夹路径
-# folder_path = 'images'   # 生成 GIF 的图片例子
+folder_path = 'images'   # 生成 GIF 的图片例子
 # folder_path = os.path.join('images', 'text_images')   # 补充字的的图片例子
-folder_path = os.path.join('images', 'merge_images')   # 合并的图片例子
+# folder_path = os.path.join('images', 'merge_images')   # 合并的图片例子
 
 # 获取所有图片文件名，包括jpg, png格式的图片
 image_files = glob.glob(os.path.join(folder_path, "*.[jJ][pP][gG]")) \
@@ -32,7 +34,8 @@ img_list = loop.run_until_complete(open_image_from_various(image_files))
 duration_time = 3000
 middle_interval = 10
 text = "#ll示例文字"
-array = (1,2,0),(3,0,4),(0,5,6)
+# array = (1,2,0),(3,0,4),(0,5,6)
+array = None
 
 # 测试
 if array:
@@ -50,9 +53,17 @@ else:
             new_image.show()
     elif len(img_list) > 4:   # GIF
         gif_io = generate_gif(img_list, duration_time)
+        zip_obj = io.BytesIO()
+        with zipfile.ZipFile(zip_obj, mode='w') as zf:
+            # 将 BytesIO 对象添加到 ZIP 文件中
+            zf.writestr("555.gif", gif_io.getvalue())
         # 保存到文件
         with open('my_gif.gif', 'wb') as f:
             f.write(gif_io.read())
+        # 保存压缩包
+        # with open("compressed.zip", "wb") as zip_file:
+        #     # 将 my_bytes 写入文件
+        #     zip_file.write(zip_obj.getvalue())
     else:
         gif_io = None
         print("check test")
