@@ -14,6 +14,7 @@ import zipfile
 from telegram import Update, Bot
 from telegram.ext import ContextTypes
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import error
 
 from process_images import add_text, merge_multi_images, generate_gif, open_image_from_various, merge_images_according_array
 import config
@@ -75,11 +76,13 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                                # 有不足，只能处理带图片的，以后重构修
         userid_str = str(target_file)
         file_id = message.photo[-1].file_id
+        file_unique_id = message.photo[-1].file_unique_id
+        file_data = (file_unique_id, file_id)
         if config.image_list.get(userid_str):
-            config.image_list.get(userid_str).append(file_id)
+            config.image_list.get(userid_str).append(file_data)
         else:   # 若没有对应列表，先创建，再添加
             config.image_list[userid_str] = []
-            config.image_list[userid_str].append(file_id)
+            config.image_list[userid_str].append(file_data)
 
         # 获得说明文字
         userid_text_str = userid_str + "_text"
@@ -163,6 +166,7 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
     middle_interval = 10   # 10 个像素
     text = config.image_list.get(userid_text_str, "text_of_processed_image")
     image_name = text[0:24]   # 以免说明文字太长
+    urls_cache = config.urls_cache_dict
 
     image_id_list = config.image_list.get(userid_str)
     if image_id_list:   # 有且不为空 []
@@ -170,9 +174,19 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # 用于得到图片 URL
         bot = Bot(token=config.bot_token)
         image_url_list = []   # 存有图片网址的列表
-        for file_id in image_id_list:
-            the_file = await bot.get_file(file_id)
-            url = the_file.file_path
+        for file_unique_id, file_id in image_id_list:
+            # 检查缓存中是否存在图片下载地址
+            if file_unique_id in urls_cache.keys():
+                url = urls_cache[file_unique_id]
+                print(f"{file_unique_id} is in urls_cache")
+            else:
+                the_file = await bot.get_file(file_id)
+                url = the_file.file_path
+                # 添加图片下载地址到缓存
+                urls_cache[file_unique_id] = url
+                # 删除最旧的键值对，如果缓存超过了20条
+                if len(urls_cache) > 20:
+                    urls_cache.popitem(last=False)
             image_url_list.append(url)
         img_list = await open_image_from_various(image_url_list, config.images_cache_dict)
 
@@ -205,19 +219,31 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
             with zipfile.ZipFile(zip_obj, mode='w') as zf:
                 # 将 BytesIO 对象添加到 ZIP 文件中
                 zf.writestr(image_name, gif_io.getvalue())
-
-            # await context.bot.send_animation(chat_id=update.effective_chat.id, animation=gif_io, filename=image_name)   # 以动画发送会被压缩
-            await context.bot.send_document(chat_id=update.effective_chat.id, document=gif_io, filename=image_name)   # 但这个也不行，还是压缩后的
-            # 压缩再发送。直接把 BytesIO 给它，显示空的。先保存再发送倒是可以。 保存压缩包
-            with open(zipfilename, "wb") as zip_file:
-                zip_file.write(zip_obj.getvalue())
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"为了防止被 Telegram 压缩，下面发送 zip 压缩包格式，有需要自取解压")
-            with open(zipfilename, 'rb') as zip_file:
-                await context.bot.send_document(chat_id=update.effective_chat.id, document=zip_file, filename=zip_name)
-            os.remove(zipfilename)
+            try:
+                # await context.bot.send_animation(chat_id=update.effective_chat.id, animation=gif_io, filename=image_name)   # 以动画发送会被压缩
+                await context.bot.send_document(chat_id=update.effective_chat.id, document=gif_io, filename=image_name)   # 但这个也不行，还是压缩后的
+                # 压缩再发送。直接把 BytesIO 给它，显示空的。先保存再发送倒是可以。 保存压缩包
+                with open(zipfilename, "wb") as zip_file:
+                    zip_file.write(zip_obj.getvalue())
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"为了防止被 Telegram 压缩，下面发送 zip 压缩包格式，有需要自取解压")
+                with open(zipfilename, 'rb') as zip_file:
+                    await context.bot.send_document(chat_id=update.effective_chat.id, document=zip_file, filename=zip_name)
+            except error.TimedOut:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="网络原因，未能成功发送，请重新 \\image")
+            except:   # 由于网络不畅会引发一系列异常，光有上面那个，还不够
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="网络原因，未能成功发送，请重新 \\image")
+            else:
+                os.remove(zipfilename)   # 发送失败后，不删除，而是下次发送直接使用
         else:
             image_name += ".png"
-            await context.bot.send_photo(chat_id=update.effective_chat.id, photo=gif_io, filename=image_name)
+            try:
+                await context.bot.send_photo(chat_id=update.effective_chat.id, photo=gif_io, filename=image_name)
+            except error.TimedOut:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="网络原因，未能成功发送，请重新 \\image")
+            except:   # 由于网络不畅会引发一系列异常，光有上面那个，还不够
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="网络原因，未能成功发送，请重新 \\image")
+            else:
+                pass
 
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="no image left")

@@ -84,6 +84,7 @@ else:
     ENVIRONMENT = Environment.OTHER
     sys.exit('Unknown system.')
 
+urls_cache_dict = OrderedDict()
 images_cache_dict = OrderedDict()
 
 logging.basicConfig(
