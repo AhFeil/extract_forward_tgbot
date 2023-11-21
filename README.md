@@ -130,7 +130,7 @@ def exec_command(command2exec, datafile):
     subprocess.call(actual_command, shell=True)
 ```
 
-详细流程，参考 [【部署流程】之 Telegram 转发机器人](https://blog.vfly2.com/2023/08/deployment-process-extract_forward_tgbot/) 。
+详细流程，参考 [Telegram 转发机器人的部署流程](https://technique.vfly2.com/2023/08/deployment-process-extract_forward_tgbot/)。
 
 
 ---
