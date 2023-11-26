@@ -188,7 +188,11 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if len(urls_cache) > 20:
                     urls_cache.popitem(last=False)
             image_url_list.append(url)
-        img_list = await open_image_from_various(image_url_list, config.images_cache_dict)
+        try:   # 国内开发，有时候网不稳定，下载失败
+            img_list = await open_image_from_various(image_url_list, config.images_cache_dict)
+        except:
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="网络原因，未能下载图片，请重新 /image")
+            return
 
         is_gif = False
         array = config.image_option.get(userid_array_str)
@@ -229,9 +233,9 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 with open(zipfilename, 'rb') as zip_file:
                     await context.bot.send_document(chat_id=update.effective_chat.id, document=zip_file, filename=zip_name)
             except error.TimedOut:
-                await context.bot.send_message(chat_id=update.effective_chat.id, text="网络原因，未能成功发送，请重新 \\image")
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="网络原因，未能成功发送，请重新 /image")
             except:   # 由于网络不畅会引发一系列异常，光有上面那个，还不够
-                await context.bot.send_message(chat_id=update.effective_chat.id, text="网络原因，未能成功发送，请重新 \\image")
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="网络原因，未能成功发送，请重新 /image")
             else:
                 os.remove(zipfilename)   # 发送失败后，不删除，而是下次发送直接使用
         else:
@@ -239,9 +243,9 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
             try:
                 await context.bot.send_photo(chat_id=update.effective_chat.id, photo=gif_io, filename=image_name)
             except error.TimedOut:
-                await context.bot.send_message(chat_id=update.effective_chat.id, text="网络原因，未能成功发送，请重新 \\image")
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="网络原因，未能成功发送，请重新 /image")
             except:   # 由于网络不畅会引发一系列异常，光有上面那个，还不够
-                await context.bot.send_message(chat_id=update.effective_chat.id, text="网络原因，未能成功发送，请重新 \\image")
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="网络原因，未能成功发送，请重新 /image")
             else:
                 pass
 
