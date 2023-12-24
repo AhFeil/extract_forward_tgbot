@@ -3,6 +3,7 @@ import logging
 import argparse
 
 from configHandle import Config
+from Transmit import LocalReadWrite, WebnoteReadWrite
 
 # 创建一个解析器
 parser = argparse.ArgumentParser(description="Your script description")
@@ -17,7 +18,8 @@ configfile = args.config
 # 定义所有变量
 config = Config(configfile)
 
-
+io4message = LocalReadWrite()
+io4push = WebnoteReadWrite(config.domain)
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

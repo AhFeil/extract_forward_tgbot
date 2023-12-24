@@ -2,3 +2,5 @@ python-telegram-bot~=20.3
 Pillow
 numpy
 ruamel.yaml
+requests
+beautifulsoup4

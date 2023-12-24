@@ -17,13 +17,14 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram import error
 
 from process_images import add_text, merge_multi_images, generate_gif, open_image_from_various, merge_images_according_array
-from preprocess import config
+from preprocess import config, io4message, io4push
+from Transmit import backup_file
 
 
 # 回复固定内容
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    target_file = update.effective_chat.id
-    store_file = config.store_dir + str(target_file)
+    user_id = update.effective_chat.id
+    store_file = config.store_dir + str(user_id)
     # 第一次聊天时预先创建两个用户数据文件，防止后续代码读取时因不存在出错
     with open(store_file + '_url' + '.txt', 'a', encoding='utf-8'):
         pass
@@ -51,10 +52,19 @@ def extract_urls(update: Update):
     return url
 
 
+# def assign(from_where, from_where_username):
+#     """分配"""
+#     if from_where == "yourself":
+#         pass
+#     else:
+#         match from_where_username:
+
+
+
 # 转存
 async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    target_file = update.effective_chat.id
-    store_file = config.store_dir + str(target_file)
+    user_id = update.effective_chat.id
+    store_file = config.store_dir + str(user_id)
     rec_time = (str(datetime.datetime.now()))[5:-7]
 
     message = update.message
@@ -68,13 +78,12 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # 对于转发自指定频道的消息进行特殊处理，目前是对指定频道只提取网址。
     if message.forward_from_chat and message.forward_from_chat.username in config.channel:
         url = extract_urls(update=update)
-        with open(store_file + '_url' + '.txt', 'a', encoding='utf-8') as f:
-            f.write('\n'.join(filter(None, url)) + '\n')
+        io4message.write_behind(store_file + '_url' + '.txt', '\n'.join(filter(None, url)) + '\n')
         await context.bot.send_message(chat_id=update.effective_chat.id, text='url saved.')
     # 由指定频道转发的消息或自己发送带图片的消息
     elif (message.forward_from_chat and message.forward_from_chat.username in config.image_channel) or (not message.forward_from_chat and message.photo):
                                                # 有不足，只能处理带图片的，以后重构修
-        userid_str = str(target_file)
+        userid_str = str(user_id)
         file_id = message.photo[-1].file_id
         file_unique_id = message.photo[-1].file_unique_id
         file_data = (file_unique_id, file_id)
@@ -110,15 +119,13 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # 仅一行且 http 开头的内容，放在 _url 中
         if content and content[0:4] == "http" and '\n' not in content:
-            with open(store_file + '_url' + '.txt', 'a', encoding='utf-8') as f:
-                f.write(content + '\n')
+            io4message.write_behind(store_file + '_url' + '.txt', content + '\n')
         else:
             element = '\n'
             saved_content = '-' * 27 + line_center_content.center(80, '-') + '\n' + content + '\n' + element.join(filter(None, link)) + '\n\n'
 
             # 保存到文件中
-            with open(store_file + '.txt', 'a', encoding='utf-8') as f:
-                f.write(saved_content)
+            io4message.write_behind(store_file + '.txt', saved_content)
 
         await context.bot.send_message(chat_id=update.effective_chat.id, text='transfer done. 转存完成')
 
@@ -266,30 +273,26 @@ def exec_command(command2exec, datafile):
 # 推送到
 async def push(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    target_file = update.effective_chat.id   # 存有信息的文件
-    store_file = config.store_dir + str(target_file)
-    user_key = str(target_file)
+    user_id = update.effective_chat.id   # 存有信息的文件
+    store_file = config.store_dir + str(user_id)
     # netstr = config.netstr   # 选择的网址地址
     # 随机生成 16位 的 字母和数字
     random_str = ''.join(random.sample(string.ascii_letters + string.digits, 16))
     # 有设置路径则取用，没有就随机
-    netstr = config.path_dict.get(user_key, random_str)
+    netstr = config.path_dict.get(str(user_id), random_str)
 
     # 根据系统特征选择 要保存的位置，根据不同用户添加不同网址
     save_file = config.push_dir + netstr
 
     # 读取然后保存
     try:
-        with open(store_file + '.txt', 'r', encoding='utf-8') as f, \
-                open(store_file + '_url.txt', 'r', encoding='utf-8') as f_url:
-            stored = f.read()
-            stored_url = f_url.read()
+        stored = io4message.read(store_file + '.txt')
+        stored_url = io4message.read(store_file + '_url.txt')
     except FileNotFoundError:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="请点一下 /start ，再尝试推送")
         return
     all_stored = stored + stored_url
-    with open(save_file, 'a', encoding='utf-8') as f:
-        f.write(all_stored)
+    io4message.write(save_file, all_stored)
     # 如果有指定外部命令，则执行命令
     if config.command2exec:
         try:
@@ -337,37 +340,17 @@ async def sure_clear(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # 这个才是真实操作的删除函数，clearall 指向这个，接收按键里的信息并删除转存内容 或回复不删
 async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    target_file = update.effective_chat.id
-    store_file = config.store_dir + str(target_file)
+    user_id = update.effective_chat.id
+    store_file = config.store_dir + str(user_id)
     # 一个特殊的缓冲区？
     query = update.callback_query
     await query.answer()
 
     t = localtime(time())
     backup_time = strftime('%m-%d-%H-%M-%S', t)
-    filename = config.backupdir + str(target_file) + f'_backup_{backup_time}' + '.txt'
-    if config.backupdir[0] == '/':   # 如果 config 中使用 绝对路径
-        backup_path = filename
-    elif config.backupdir[0] == '.':
-        path = os.getcwd()
-        backup_path = os.path.join(path, filename)
-        # print(backup_path)  # 虽然D:\Data\Codes\SelfProject\TGBot\./backup/2082052804_backup_09-23-00-16-39.txt，但可以用
-    else:
-        backup_path = './wrong-config-backupdir'
-        print('wrong backupdir')
-
     if query.data == 'clearall':
-        with open(store_file + '.txt', 'r+', encoding='utf-8') as f, \
-                open(store_file + '_url.txt', 'r+', encoding='utf-8') as f_url:
-            mysave = f.read()
-            mysave_url = f_url.read()
-            # 重置文件指针并清除文件内容
-            f.seek(0)
-            f.truncate()
-            f_url.seek(0)
-            f_url.truncate()
-        with open(backup_path, 'w', encoding='utf-8') as f:
-            f.write(mysave + mysave_url)
+        backup_file(store_file + '.txt', config.backupdir, f'_backup_{backup_time}', True)
+        backup_file(store_file + '_url.txt', config.backupdir, f'_backup_{backup_time}', True)
         await query.edit_message_text(text=f"Selected option: {query.data}, clear done. 已清空。")
     elif query.data == 'notclear':
         await query.edit_message_text(text="OK, I haven't clear yet. 放心，还没清除。")
@@ -380,8 +363,8 @@ async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def earliest_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg_count = 2
     url_count = 0
-    target_file = update.effective_chat.id
-    store_file = config.store_dir + str(target_file)
+    user_id = update.effective_chat.id
+    store_file = config.store_dir + str(user_id)
     first_message = ""
 
     with open(store_file + '.txt', 'r', encoding='utf-8') as f, \
@@ -422,8 +405,8 @@ async def earliest_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # 删除最新添加的一条会返回文本，可以实现外显链接，
 async def delete_last_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    target_file = update.effective_chat.id
-    store_file = config.store_dir + str(target_file) + '.txt'
+    user_id = update.effective_chat.id
+    store_file = config.store_dir + str(user_id) + '.txt'
     last_message = ""
 
     with open(store_file, 'r', encoding='utf-8') as f:
