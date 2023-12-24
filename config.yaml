@@ -1,9 +1,0 @@
-is_production: false
-chat_id: 2082052804
-bot_token: 5344378819:AAGG3r70tFwfiaUr1884TIzc8y5z2pY9xmY
-push_dir: /var/www/webnote/_tmp/
-domain: https://forward.vfly.app/
-# path:
-exec: "curl -k --data-urlencode text@{contentfile} https://forward.vfly.app/try"
-
-
