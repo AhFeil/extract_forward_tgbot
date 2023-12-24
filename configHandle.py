@@ -20,7 +20,6 @@ class Config(object):
         # 预先声明变量
         self.channel = ['abskoop']  # 应用特殊提取规则的频道
         self.image_channel = ['woshadiao']  # 对里面的频道应用特殊提取规则，也就是会考虑图片
-        self.manage_id = [self.chat_id, '1111111111']  # 管理员 id
         self.store_dir = './forward_message/'  # 存储 转存（forward）消息 的目录
         self.backupdir = './backup/'  # 绝对路径自然搜索以 / 开头，相对路径要以 ./ 开头 ,以 '/' 结尾
 
@@ -59,4 +58,5 @@ class Config(object):
         self.domain = configs['domain']   # 查看转存内容的网址的域名
         self.netstr = configs.get('path')
         self.command2exec = configs.get('exec')   # 在发送 \push 指令后，执行一个命令，设计用于自定义推送，比如 curl 到 webnote
+        self.manage_id = [self.chat_id, '1111111111']  # 管理员 id
 

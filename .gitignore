@@ -19,6 +19,7 @@ try1.py
 default_path
 path_dict.json
 my_gif.gif
+config.yaml
 
 # Distribution / packaging
 .Python
