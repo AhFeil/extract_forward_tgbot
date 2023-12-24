@@ -17,7 +17,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram import error
 
 from process_images import add_text, merge_multi_images, generate_gif, open_image_from_various, merge_images_according_array
-import config
+from preprocess import config
 
 
 # 回复固定内容
@@ -30,7 +30,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     with open(store_file + '.txt', 'a', encoding='utf-8'):
         pass
     await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text=f"This is extract-forward bot in {config.system}, 这是一个转存机器人\n\n"
+                                   text=f"This is extract-forward bot, 这是一个转存机器人\n\n"
                                         f"基本使用说明：\n"
                                         f"1. 转发(forward)消息给机器人，或者直接发送消息，机器人会存储；\n"
                                         f"2. 发送命令 `\\push` ，会返回网址，访问即可看到所有转发的信息。\n\n"

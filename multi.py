@@ -4,7 +4,7 @@ tg机器人的多人版相关命令行为
 from telegram import Update
 from telegram.ext import CallbackContext
 
-import config
+from preprocess import config
 
 
 async def set_config(update: Update, context: CallbackContext):

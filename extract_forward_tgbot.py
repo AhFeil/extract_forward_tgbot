@@ -8,7 +8,7 @@ import json
 from telegram import Update
 from telegram.ext import filters, MessageHandler, ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
-import config
+import preprocess
 # 从 tgbotBehavior.py 导入定义机器人动作的函数
 from tgbotBehavior import start, transfer, clear, push, unknown, earliest_msg, sure_clear, delete_last_msg, image_get
 from multi import set_config
@@ -16,12 +16,12 @@ from multi import set_config
 
 # 关闭机器人，这个只能在这，因为 updater 和 sys
 async def shutdown(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if str(update.effective_chat.id) in config.manage_id:
+    if str(update.effective_chat.id) in preprocess.config.manage_id:
         await context.bot.send_message(chat_id=update.effective_chat.id,
                                        text="robot will shutdown immediately")
         # 在程序停止运行时将字典保存回文件
-        with open(config.json_file, 'w') as file:
-            json.dump(config.path_dict, file)
+        with open(preprocess.config.json_file, 'w') as file:
+            json.dump(preprocess.config.path_dict, file)
         # application.stop()
         sys.exit(0)
     else:
@@ -30,7 +30,7 @@ async def shutdown(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 if __name__ == '__main__':
-    application = ApplicationBuilder().token(config.bot_token).build()
+    application = ApplicationBuilder().token(preprocess.config.bot_token).build()
 
     # 类似路由，接收到 /start 执行哪个函数，
     start_handler = CommandHandler('start', start)
@@ -75,6 +75,6 @@ if __name__ == '__main__':
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
     # 在程序停止运行时将字典保存回文件
-    with open(config.json_file, 'w') as file:
-        json.dump(config.path_dict, file)
+    with open(preprocess.config.json_file, 'w') as file:
+        json.dump(preprocess.config.path_dict, file)
 
