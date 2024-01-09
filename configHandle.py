@@ -16,10 +16,6 @@ class Config(object):
 
         # 指定 JSON 文件路径
         self.json_file = 'path_dict.json'
-
-        # 预先声明变量
-        self.channel = ['abskoop']  # 应用特殊提取规则的频道
-        self.image_channel = ['woshadiao']  # 对里面的频道应用特殊提取规则，也就是会考虑图片
         self.store_dir = './forward_message/'  # 存储 转存（forward）消息 的目录
         self.backupdir = './backup/'  # 绝对路径自然搜索以 / 开头，相对路径要以 ./ 开头 ,以 '/' 结尾
 
@@ -59,4 +55,9 @@ class Config(object):
         self.netstr = configs.get('path')
         self.command2exec = configs.get('exec')   # 在发送 \push 指令后，执行一个命令，设计用于自定义推送，比如 curl 到 webnote
         self.manage_id = [self.chat_id, '1111111111']  # 管理员 id
+
+        # 有特殊规则的频道
+        self.special_channel = configs.get('special_channel', {})
+        self.only_url_channel = self.special_channel.get('only_url', {})  # 应用特殊提取规则的频道
+        self.image_channel = self.special_channel.get('image', {})  # 对里面的频道应用特殊提取规则，也就是会考虑图片
 

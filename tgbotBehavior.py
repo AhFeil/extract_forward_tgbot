@@ -38,6 +38,36 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                         f"项目地址： https://github.com/AhFeil/extract_forward_tgbot")
 
 
+
+def general_logic(update: Update, store_file: str, line_center_content: str) -> str:
+    """通用规则：先提取文本，再把内联网址按顺序列在后面"""
+    link = ['']
+
+    # 提取内容
+    if update.message.text:
+        content = update.message.text
+        search_link = update.message.entities
+    else:
+        content = update.message.caption
+        search_link = update.message.caption_entities
+    # 提取内联网址
+    for i in search_link:
+        link.append(i.url)
+    # 有 bug ，对于转发的无内联网址的图片消息，会报错 TypeError: can only concatenate str (not "NoneType") to str 
+    # 不理解，发送纯文本又不报错
+
+    # 仅一行且 http 开头的内容，放在 _url 中
+    if content and content[0:4] == "http" and '\n' not in content:
+        io4message.write_behind(store_file + '_url' + '.txt', content + '\n')
+        return "url saved. 保存网址"
+    else:
+        element = '\n'
+        saved_content = '-' * 27 + line_center_content.center(80, '-') + '\n' + content + '\n' + element.join(filter(None, link)) + '\n\n'
+        # 保存到文件中
+        io4message.write_behind(store_file + '.txt', saved_content)
+        return "transfer done. 转存完成"
+
+
 def extract_urls(update: Update):
     # 有时候 AHHH 那个也会发纯文本，如果只有 ~。caption，就不能处理纯文本了，还会报错
     string = ''   # 不然异常终止后会销毁string
@@ -52,18 +82,30 @@ def extract_urls(update: Update):
     return url
 
 
-# def assign(from_where, from_where_username):
-#     """分配"""
-#     if from_where == "yourself":
-#         pass
-#     else:
-#         match from_where_username:
+def save_data_of_photos(message, userid_str):
+    """自己发送图片或从指定频道转发，将图片的 file_id 和 file_unique_id 存入由 user_ID 区分的队列中"""
+    file_id = message.photo[-1].file_id
+    file_unique_id = message.photo[-1].file_unique_id
+    file_data = (file_unique_id, file_id)
+    if config.image_list.get(userid_str):
+        config.image_list.get(userid_str).append(file_data)
+    else:   # 若没有对应列表，先创建，再添加
+        config.image_list[userid_str] = []
+        config.image_list[userid_str].append(file_data)
 
+    # 获得说明文字
+    userid_text_str = userid_str + "_text"
+    try:
+        text = update.message.caption.split("\n", 1)[0]
+        config.image_list[userid_text_str] = text
+    except:
+        text = False
 
 
 # 转存
 async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
+    userid_str = str(user_id)
     store_file = config.store_dir + str(user_id)
     rec_time = (str(datetime.datetime.now()))[5:-7]
 
@@ -75,59 +117,27 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     direct_url = "so can not being accessed directly" if from_where == "yourself" else f"  https://t.me/{from_where_username}/{message_id}"
     line_center_content = rec_time + " from " + from_where + direct_url
 
-    # 对于转发自指定频道的消息进行特殊处理，目前是对指定频道只提取网址。
-    if message.forward_from_chat and message.forward_from_chat.username in config.channel:
-        url = extract_urls(update=update)
-        io4message.write_behind(store_file + '_url' + '.txt', '\n'.join(filter(None, url)) + '\n')
-        await context.bot.send_message(chat_id=update.effective_chat.id, text='url saved.')
-    # 由指定频道转发的消息或自己发送带图片的消息
-    elif (message.forward_from_chat and message.forward_from_chat.username in config.image_channel) or (not message.forward_from_chat and message.photo):
-                                               # 有不足，只能处理带图片的，以后重构修
-        userid_str = str(user_id)
-        file_id = message.photo[-1].file_id
-        file_unique_id = message.photo[-1].file_unique_id
-        file_data = (file_unique_id, file_id)
-        if config.image_list.get(userid_str):
-            config.image_list.get(userid_str).append(file_data)
-        else:   # 若没有对应列表，先创建，再添加
-            config.image_list[userid_str] = []
-            config.image_list[userid_str].append(file_data)
-
-        # 获得说明文字
-        userid_text_str = userid_str + "_text"
-        try:
-            text = update.message.caption.split("\n", 1)[0]
-            config.image_list[userid_text_str] = text
-        except:
-            text = False
-
-    else:   # 通用规则，先提取文本，再把内联网址按顺序列在后面
-        link = ['']
-
-        # 提取内容
-        if update.message.text:
-            content = update.message.text
-            search_link = update.message.entities
-        else:
-            content = update.message.caption
-            search_link = update.message.caption_entities
-        # 提取内联网址
-        for i in search_link:
-            link.append(i.url)
-        # 有 bug ，对于转发的无内联网址的图片消息，会报错 TypeError: can only concatenate str (not "NoneType") to str ，不理解
-        # 发送纯文本又不报错
-
-        # 仅一行且 http 开头的内容，放在 _url 中
-        if content and content[0:4] == "http" and '\n' not in content:
-            io4message.write_behind(store_file + '_url' + '.txt', content + '\n')
-        else:
-            element = '\n'
-            saved_content = '-' * 27 + line_center_content.center(80, '-') + '\n' + content + '\n' + element.join(filter(None, link)) + '\n\n'
-
-            # 保存到文件中
-            io4message.write_behind(store_file + '.txt', saved_content)
-
-        await context.bot.send_message(chat_id=update.effective_chat.id, text='transfer done. 转存完成')
+    if from_where == "yourself":   # 自己发的，肯定是文字就是文字，图片就是图片，有就代表要用那方面的功能，不需要再判断
+        if message.photo:   # 如果发送的是图片
+            save_data_of_photos(message, userid_str)
+        elif 0:
+            pass
+        else:   # 通用规则
+            respond = general_logic(update, store_file, line_center_content)
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=respond)
+    # 不是自己发的，先根据频道分类，再在频道里细分，调用函数处理
+    else:
+        channel_name = message.forward_from_chat.username
+        # 对于转发自指定频道的消息进行特殊处理
+        if channel_name in config.only_url_channel:   # 只提取网址
+            url = extract_urls(update=update)
+            io4message.write_behind(store_file + '_url' + '.txt', '\n'.join(filter(None, url)) + '\n')
+            await context.bot.send_message(chat_id=update.effective_chat.id, text='url saved.')
+        elif channel_name in config.image_channel:   # 处理图片的逻辑(若想转存这些频道里的内容，只能手动复制)
+             save_data_of_photos(message, userid_str)
+        else:   # 通用规则
+            respond = general_logic(update, store_file, line_center_content)
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=respond)
 
 
 async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
