@@ -17,6 +17,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram import error
 
 from process_images import add_text, merge_multi_images, generate_gif, open_image_from_various, merge_images_according_array
+from process_video import video2gif114tg
 from preprocess import config, io4message, io4push
 from Transmit import backup_file
 
@@ -102,6 +103,33 @@ def save_data_of_photos(message, userid_str):
         text = False
 
 
+async def send_file(fileIO: io.BytesIO, file_name: str, user_id: int, context: ContextTypes.DEFAULT_TYPE, del_file_list: list) -> None:
+    """专门发送文件，可选顺便发送原始文件还是压缩包，或都发送，可以避免被压缩。还可传入成功压缩后要删除的文件列表"""
+    """暂时只接受 BytesIO 发送"""
+    zip_name = file_name + '.zip'
+    zip_obj = io.BytesIO()
+    with zipfile.ZipFile(zip_obj, mode='w') as zf:
+        # 将 BytesIO 对象添加到 ZIP 文件中
+        zf.writestr(file_name, fileIO.getvalue())
+    try:
+        await context.bot.send_document(chat_id=user_id, document=fileIO, filename=file_name)
+        await context.bot.send_message(chat_id=user_id, text=f"为了防止被 Telegram 压缩(小 gif 会直接转成mp4)，下面发送 zip 压缩包格式")
+        temp_zipfile = f"compressed-{user_id}.zip"
+        with open(temp_zipfile, "wb") as zip_file:
+            zip_file.write(zip_obj.getvalue())
+        with open(temp_zipfile, 'rb') as zip_file:
+            await context.bot.send_document(chat_id=user_id, document=zip_file, filename=zip_name)
+    except error.TimedOut:
+        await context.bot.send_message(chat_id=user_id, text="网络原因，未能成功发送，请重新 /image")
+    except Exception as e:   # 由于网络不畅会引发一系列异常，光有上面那个，还不够
+        print(e)
+        await context.bot.send_message(chat_id=user_id, text="可能网络原因，未能成功发送，请重新 /image")
+    else:
+        os.remove(temp_zipfile)
+        for del_file in del_file_list:
+            os.remove(del_file)   # 不出意外才删除
+
+
 # 转存
 async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
@@ -117,11 +145,21 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     direct_url = "so can not being accessed directly" if from_where == "yourself" else f"  https://t.me/{from_where_username}/{message_id}"
     line_center_content = rec_time + " from " + from_where + direct_url
 
+    bot = Bot(token=config.bot_token)   # 用于得到文件 URL
     if from_where == "yourself":   # 自己发的，肯定是文字就是文字，图片就是图片，有就代表要用那方面的功能，不需要再判断
         if message.photo:   # 如果发送的是图片
             save_data_of_photos(message, userid_str)
-        elif 0:
-            pass
+        elif message.video:   # 如果发送的是视频
+            file_id = message.video.file_id                     # 一定能复用
+            file_unique_id = message.video.file_unique_id
+            file_size = message.video.file_size   # todo 文件太大，则不处理
+            # 得到视频 URL
+            the_file = await bot.get_file(file_id)
+            video_dir_list = [the_file.file_path]
+            # 转换成 gif
+            gif_io, video_local_path = await video2gif114tg(video_dir_list, config.store_dir, (message.video.width, message.video.height), max_width=config.gif_max_width)
+            video_name = file_unique_id + ".gif"
+            await send_file(gif_io, video_name, user_id, context, [video_local_path])
         else:   # 通用规则
             respond = general_logic(update, store_file, line_center_content)
             await context.bot.send_message(chat_id=update.effective_chat.id, text=respond)
@@ -134,7 +172,22 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
             io4message.write_behind(store_file + '_url' + '.txt', '\n'.join(filter(None, url)) + '\n')
             await context.bot.send_message(chat_id=update.effective_chat.id, text='url saved.')
         elif channel_name in config.image_channel:   # 处理图片的逻辑(若想转存这些频道里的内容，只能手动复制)
-             save_data_of_photos(message, userid_str)
+            if message.photo:   # 如果发送的是图片
+                save_data_of_photos(message, userid_str)
+            elif message.video:   # 如果发送的是视频
+                file_id = message.video.file_id
+                file_unique_id = message.video.file_unique_id
+                file_size = message.video.file_size   # todo 文件太大，则不处理
+                # 得到视频 URL
+                the_file = await bot.get_file(file_id)
+                video_dir_list = [the_file.file_path]
+                # 转换成 gif
+                gif_io, video_local_path = await video2gif114tg(video_dir_list, config.store_dir, (message.video.width, message.video.height), max_width=config.gif_max_width)
+                video_name = file_unique_id + ".gif"
+                await send_file(gif_io, video_name, user_id, context, [video_local_path])
+            else:   # 通用规则
+                respond = general_logic(update, store_file, line_center_content)
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=respond)
         else:   # 通用规则
             respond = general_logic(update, store_file, line_center_content)
             await context.bot.send_message(chat_id=update.effective_chat.id, text=respond)

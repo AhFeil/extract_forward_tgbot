@@ -20,6 +20,7 @@ default_path
 path_dict.json
 my_gif.gif
 config.yaml
+output.gif
 
 # Distribution / packaging
 .Python
