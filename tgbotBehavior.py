@@ -103,7 +103,7 @@ def save_data_of_photos(message, userid_str):
         text = False
 
 
-async def send_file(fileIO: io.BytesIO, file_name: str, user_id: int, context: ContextTypes.DEFAULT_TYPE, del_file_list: list) -> None:
+async def send_gif_file(fileIO: io.BytesIO, file_name: str, user_id: int, context: ContextTypes.DEFAULT_TYPE, del_file_list=[]) -> None:
     """专门发送文件，可选顺便发送原始文件还是压缩包，或都发送，可以避免被压缩。还可传入成功压缩后要删除的文件列表"""
     """暂时只接受 BytesIO 发送"""
     zip_name = file_name + '.zip'
@@ -112,8 +112,10 @@ async def send_file(fileIO: io.BytesIO, file_name: str, user_id: int, context: C
         # 将 BytesIO 对象添加到 ZIP 文件中
         zf.writestr(file_name, fileIO.getvalue())
     try:
-        await context.bot.send_document(chat_id=user_id, document=fileIO, filename=file_name)
+        # await context.bot.send_animation(chat_id=update.effective_chat.id, animation=gif_io, filename=image_name)   # 以动画发送会被压缩
+        await context.bot.send_document(chat_id=user_id, document=fileIO, filename=file_name)   # 但这个也不行，还是压缩后的
         await context.bot.send_message(chat_id=user_id, text=f"为了防止被 Telegram 压缩(小 gif 会直接转成mp4)，下面发送 zip 压缩包格式")
+        # 压缩再发送。直接把 BytesIO 给它，显示空的。先保存再发送倒是可以。 保存压缩包
         temp_zipfile = f"compressed-{user_id}.zip"
         with open(temp_zipfile, "wb") as zip_file:
             zip_file.write(zip_obj.getvalue())
@@ -127,7 +129,7 @@ async def send_file(fileIO: io.BytesIO, file_name: str, user_id: int, context: C
     else:
         os.remove(temp_zipfile)
         for del_file in del_file_list:
-            os.remove(del_file)   # 不出意外才删除
+            os.remove(del_file)   # 不出意外才删除。发送失败后，下次发送直接使用
 
 
 # 转存
@@ -159,7 +161,7 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # 转换成 gif
             gif_io, video_local_path = await video2gif114tg(video_dir_list, config.store_dir, (message.video.width, message.video.height), max_width=config.gif_max_width)
             video_name = file_unique_id + ".gif"
-            await send_file(gif_io, video_name, user_id, context, [video_local_path])
+            await send_gif_file(gif_io, video_name, user_id, context, [video_local_path])
         else:   # 通用规则
             respond = general_logic(update, store_file, line_center_content)
             await context.bot.send_message(chat_id=update.effective_chat.id, text=respond)
@@ -184,7 +186,7 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # 转换成 gif
                 gif_io, video_local_path = await video2gif114tg(video_dir_list, config.store_dir, (message.video.width, message.video.height), max_width=config.gif_max_width)
                 video_name = file_unique_id + ".gif"
-                await send_file(gif_io, video_name, user_id, context, [video_local_path])
+                await send_gif_file(gif_io, video_name, user_id, context, [video_local_path])
             else:   # 通用规则
                 respond = general_logic(update, store_file, line_center_content)
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=respond)
@@ -287,27 +289,7 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
         config.image_list[userid_str].clear()   # 清空列表
         if is_gif:
             image_name += ".gif"
-            zip_name = image_name + '.zip'
-            zip_obj = io.BytesIO()
-            zipfilename = f"compressed-{update.effective_chat.id}.zip"
-            with zipfile.ZipFile(zip_obj, mode='w') as zf:
-                # 将 BytesIO 对象添加到 ZIP 文件中
-                zf.writestr(image_name, gif_io.getvalue())
-            try:
-                # await context.bot.send_animation(chat_id=update.effective_chat.id, animation=gif_io, filename=image_name)   # 以动画发送会被压缩
-                await context.bot.send_document(chat_id=update.effective_chat.id, document=gif_io, filename=image_name)   # 但这个也不行，还是压缩后的
-                # 压缩再发送。直接把 BytesIO 给它，显示空的。先保存再发送倒是可以。 保存压缩包
-                with open(zipfilename, "wb") as zip_file:
-                    zip_file.write(zip_obj.getvalue())
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"为了防止被 Telegram 压缩，下面发送 zip 压缩包格式，有需要自取解压")
-                with open(zipfilename, 'rb') as zip_file:
-                    await context.bot.send_document(chat_id=update.effective_chat.id, document=zip_file, filename=zip_name)
-            except error.TimedOut:
-                await context.bot.send_message(chat_id=update.effective_chat.id, text="网络原因，未能成功发送，请重新 /image")
-            except:   # 由于网络不畅会引发一系列异常，光有上面那个，还不够
-                await context.bot.send_message(chat_id=update.effective_chat.id, text="网络原因，未能成功发送，请重新 /image")
-            else:
-                os.remove(zipfilename)   # 发送失败后，不删除，而是下次发送直接使用
+            await send_gif_file(gif_io, image_name, user_id, context)
         else:
             image_name += ".png"
             try:
