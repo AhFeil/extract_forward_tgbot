@@ -45,12 +45,12 @@ def general_logic(update: Update, store_file: str, line_center_content: str) -> 
     link = ['']
 
     # 提取内容
-    if update.message.text:
-        content = update.message.text
+    if content := update.message.text:
         search_link = update.message.entities
-    else:
-        content = update.message.caption
+    elif content := update.message.caption:
         search_link = update.message.caption_entities
+    else:
+        return "not support. 不支持这种消息"
     # 提取内联网址
     for i in search_link:
         link.append(i.url)
@@ -237,6 +237,10 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     config.image_option[userid_time_str] = actual_duration
                     await context.bot.send_message(chat_id=update.effective_chat.id,
                                                 text=f"have change time to {actual_duration}")
+        elif args[0] == "clear":
+            # 第一个参数若是 clear ，就清空队列里的图片
+            config.image_list[userid_str].clear()   # 清空列表
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Have cleared pictures in the queue, 已清空队列里的图片")
         else:
             # 其他任何情况，都只是作为修改说明文字
             text_in_args = args[0]
