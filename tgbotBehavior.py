@@ -133,6 +133,16 @@ async def send_gif_file(fileIO: io.BytesIO, file_name: str, user_id: int, contex
             os.remove(del_file)   # 不出意外才删除。发送失败后，下次发送直接使用
 
 
+def check_file_in_size(file_size_in_bytes, max_in_size):
+    """检查文件，防止过大"""
+    file_size_in_mb = file_size_in_bytes / (1024 * 1024)
+
+    if file_size_in_mb > max_in_size:
+        return False
+    else:
+        return True
+
+
 # 转存
 async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
@@ -155,14 +165,18 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif message.video:   # 如果发送的是视频
             file_id = message.video.file_id                     # 一定能复用
             file_unique_id = message.video.file_unique_id
-            file_size = message.video.file_size   # todo 文件太大，则不处理
-            # 得到视频 URL
-            the_file = await bot.get_file(file_id)
-            video_dir_list = [the_file.file_path]
-            # 转换成 gif
-            gif_io, video_local_path = await video2gif114tg(video_dir_list, config.store_dir, (message.video.width, message.video.height), max_width=config.gif_max_width)
-            video_name = file_unique_id + ".gif"
-            await send_gif_file(gif_io, video_name, user_id, context, [video_local_path])
+            file_size = message.video.file_size
+            if check_file_in_size(file_size, config.video_max_size):   # 文件太大，则不处理
+                # 得到视频 URL
+                the_file = await bot.get_file(file_id)
+                video_dir_list = [the_file.file_path]
+                # 转换成 gif
+                gif_io, video_local_path = await video2gif114tg(video_dir_list, config.store_dir, (message.video.width, message.video.height), max_width=config.gif_max_width)
+                video_name = file_unique_id + ".gif"
+                await send_gif_file(gif_io, video_name, user_id, context, [video_local_path])
+            else:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="文件太大")
+                return
         else:   # 通用规则
             respond = general_logic(update, store_file, line_center_content)
             await context.bot.send_message(chat_id=update.effective_chat.id, text=respond)
@@ -180,14 +194,18 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
             elif message.video:   # 如果发送的是视频
                 file_id = message.video.file_id
                 file_unique_id = message.video.file_unique_id
-                file_size = message.video.file_size   # todo 文件太大，则不处理
-                # 得到视频 URL
-                the_file = await bot.get_file(file_id)
-                video_dir_list = [the_file.file_path]
-                # 转换成 gif
-                gif_io, video_local_path = await video2gif114tg(video_dir_list, config.store_dir, (message.video.width, message.video.height), max_width=config.gif_max_width)
-                video_name = file_unique_id + ".gif"
-                await send_gif_file(gif_io, video_name, user_id, context, [video_local_path])
+                file_size = message.video.file_size
+                if check_file_in_size(file_size, config.video_max_size):
+                    # 得到视频 URL
+                    the_file = await bot.get_file(file_id)
+                    video_dir_list = [the_file.file_path]
+                    # 转换成 gif
+                    gif_io, video_local_path = await video2gif114tg(video_dir_list, config.store_dir, (message.video.width, message.video.height), max_width=config.gif_max_width)
+                    video_name = file_unique_id + ".gif"
+                    await send_gif_file(gif_io, video_name, user_id, context, [video_local_path])
+                else:
+                    await context.bot.send_message(chat_id=update.effective_chat.id, text="文件太大")
+                    return
             else:   # 通用规则
                 respond = general_logic(update, store_file, line_center_content)
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=respond)
