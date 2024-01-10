@@ -10,23 +10,8 @@ from telegram.ext import filters, MessageHandler, ApplicationBuilder, CommandHan
 
 import preprocess
 # 从 tgbotBehavior.py 导入定义机器人动作的函数
-from tgbotBehavior import start, transfer, clear, push, unknown, earliest_msg, sure_clear, delete_last_msg, image_get
+from tgbotBehavior import start, transfer, clear, push, unknown, earliest_msg, sure_clear, delete_last_msg, image_get, shutdown, reload_config
 from multi import set_config
-
-
-# 关闭机器人，这个只能在这，因为 updater 和 sys
-async def shutdown(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if str(update.effective_chat.id) in preprocess.config.manage_id:
-        await context.bot.send_message(chat_id=update.effective_chat.id,
-                                       text="robot will shutdown immediately")
-        # 在程序停止运行时将字典保存回文件
-        with open(preprocess.config.json_file, 'w') as file:
-            json.dump(preprocess.config.path_dict, file)
-        # application.stop()
-        sys.exit(0)
-    else:
-        await context.bot.send_message(chat_id=update.effective_chat.id,
-                                       text="You are not authorized to execute this command")
 
 
 if __name__ == '__main__':
@@ -50,6 +35,8 @@ if __name__ == '__main__':
     delete_msg_handler = CommandHandler('dmsg', delete_last_msg)
     # 设置参数，如网址路径
     set_config_handler = CommandHandler('set', set_config)
+    # 重载配置文件
+    reload_handler = CommandHandler('reload', reload_config)
     # 停止机器人
     shutdown_handler = CommandHandler('shutdown', shutdown)
 
@@ -65,6 +52,7 @@ if __name__ == '__main__':
     application.add_handler(earliest_msg_handler)
     application.add_handler(delete_msg_handler)
     application.add_handler(set_config_handler)
+    application.add_handler(reload_handler)
     application.add_handler(shutdown_handler)
 
     # 未知命令回复。必须放到最后，会先判断前面的命令，都不是才会执行这个

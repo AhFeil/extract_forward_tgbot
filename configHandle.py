@@ -54,7 +54,7 @@ class Config(object):
         self.domain = configs['domain']   # 查看转存内容的网址的域名
         self.netstr = configs.get('path')
         self.command2exec = configs.get('exec')   # 在发送 \push 指令后，执行一个命令，设计用于自定义推送，比如 curl 到 webnote
-        self.manage_id = [self.chat_id, '1111111111']  # 管理员 id
+        self.manage_id = [self.chat_id, 1111111111]  # 管理员 id，放的是数字
 
         # 有特殊规则的频道
         self.special_channel = configs.get('special_channel', {})

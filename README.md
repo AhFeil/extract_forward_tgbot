@@ -11,9 +11,10 @@
 
 
 ## 转发机器人最基本使用：
+
 1. 把消息**转发**给它，或者**直接发消息**
 2. 它会提取其中的文本和内链网址并将之保存，内链网址会按照顺序放到文本后面。
-3. 发送指令 `/push` ，它会将保存的全部内容**推送**到[网页记事本](https://github.com/pereorga/minimalist-web-notepad)，并返回访问网址。
+3. 发送指令 `/push` ，它会将保存的全部内容**推送**到[网页记事本](https://github.com/pereorga/minimalist-web-notepad)，并返回网址。
 4. 在电脑访问网页，查看并高效处理。
 
 > 我习惯在周六把一周积累的一次性推送到网页，和 RSS 里积累的一起处理。
@@ -80,10 +81,24 @@
 > 图片类对话框实质上，每个图片都是单独的消息，无法自动判断有无结束。因此，借助发送指令 `/image`，完成对之前积累在队列里的图片的处理。
 
 
-视频转 GIF 演示：
+**视频转 GIF 演示**：
 
+![video2gif](https://ib.ahfei.blog:443/imagesbed/video2gif-24-01-27.webp)
 
-合成图片演示：
+**合成图片演示**：
+
+多张图片拼接
+
+![2p2one](https://ib.ahfei.blog:443/imagesbed/2p2one-24-01-12.webp)
+
+多张图片转 GIF
+
+![photos2gif](https://ib.ahfei.blog:443/imagesbed/photos2gif-24-01-35.webp)
+
+在图片底部添加说明文字
+
+![add_text](https://ib.ahfei.blog:443/imagesbed/add_text-24-01-50.webp)
+
 
 
 

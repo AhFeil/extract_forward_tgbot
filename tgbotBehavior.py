@@ -4,9 +4,10 @@ tg机器人的所有命令行为（除了 shutdown）
 import datetime
 from time import time, localtime, strftime
 import re
-import os, io
+import os, io, sys
 import random
 import string
+import json
 import subprocess
 import ast
 import zipfile
@@ -500,6 +501,30 @@ async def delete_last_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                                                           f'你保存的上一条消息：')
     await context.bot.send_message(chat_id=update.effective_chat.id, text=last_message)
 
+
+# 关闭机器人
+async def shutdown(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_chat.id
+    if user_id in config.manage_id:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="robot will shutdown immediately")
+        # 在程序停止运行时将字典保存回文件
+        with open(config.json_file, 'w') as file:
+            json.dump(config.path_dict, file)
+        # application.stop()
+        sys.exit(0)
+    else:
+        await context.bot.send_message(chat_id=update.effective_chat.id,
+                                       text="You are not authorized to execute this command")
+
+
+# 重载配置文件
+async def reload_config(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_chat.id
+    if user_id in config.manage_id:
+        config.reload()
+    else:
+        await context.bot.send_message(chat_id=update.effective_chat.id,
+                                       text="You are not authorized to execute this command")
 
 # 未知命令回复
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
