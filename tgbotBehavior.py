@@ -101,7 +101,7 @@ def save_data_of_photos(message, userid_str):
         text = update.message.caption.split("\n", 1)[0]
         config.image_list[userid_text_str] = text
     except:
-        text = False
+        text = False   # 失败获取会保留原来的
 
 
 async def send_gif_file(fileIO: io.BytesIO, file_name: str, user_id: int, context: ContextTypes.DEFAULT_TYPE, del_file_list=[]) -> None:
@@ -337,41 +337,51 @@ async def push(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_id = update.effective_chat.id   # 存有信息的文件
     store_file = config.store_dir + str(user_id)
-    # netstr = config.netstr   # 选择的网址地址
     # 随机生成 16位 的 字母和数字
     random_str = ''.join(random.sample(string.ascii_letters + string.digits, 16))
-    # 有设置路径则取用，没有就随机
-    netstr = config.path_dict.get(str(user_id), random_str)
+    # 配置文件或通过命令，有设置路径则取用，没有就随机
+    netstr = config.netstr if config.netstr else config.path_dict.get(str(user_id), random_str)
 
-    # 根据系统特征选择 要保存的位置，根据不同用户添加不同网址
-    save_file = config.push_dir + netstr
-
-    # 读取然后保存
+    # 读取保存的
     try:
         stored = io4message.read(store_file + '.txt')
         stored_url = io4message.read(store_file + '_url.txt')
     except FileNotFoundError:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="请点一下 /start ，再尝试推送")
         return
+
     all_stored = stored + stored_url
-    io4message.write(save_file, all_stored)
-    # 如果有指定外部命令，则执行命令
-    if config.command2exec:
-        try:
-            exec_command(config.command2exec, save_file)
-            # 删除文件 save_file
-            os.remove(save_file)
-            # 给出网址链接，只有 curl --data "text={content}" https://forward.vfly.app/try 这种格式才能提取出
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"push done. "
-                                                                                  f"please visit {config.command2exec.split()[-1]}\n"
-                                                                                  f"推送完成，访问上面网址查看")
-        except:
-            print("something wrong about exec_command")
-    else:
-        # 如果没有外部指令，给出访问本地文件的网址
+    
+    if config.push_dir:
+        from urllib.parse import urlparse
+	    # 推送
+        push2somewhere = config.push_dir + netstr   # 为用户分配路径
+        if os.path.exists(config.push_dir):   # 若是本地目录
+            io4message.write(push2somewhere, all_stored)
+            where2see = config.domain + netstr
+        elif urlparse(config.push_dir).scheme in ('http', 'https'):   # 若是网址路径
+            io4push.write(push2somewhere, all_stored)
+            where2see = push2somewhere
+        else:
+            print("配置文件中，push_dir 填写有误")
+            await context.bot.send_message(chat_id=config.chat_id, text="配置文件中，push_dir 填写有误")
+            return
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"push done. "
-                                                                              f"please visit {config.domain}{netstr}\n"
-                                                                              f"推送完成，访问上面网址查看")
+                                                                            f"please visit {where2see}\n"
+                                                                            f"推送完成，访问上面网址查看")
+    elif config.command2exec:   # 没有配置 push_dir 的话，那应该配置了外部命令
+        try:
+            exec_command(config.command2exec, all_stored)
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"execute done. 执行完成")
+        except:
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"fail to execute: {config.command2exec}")
+    else:
+        # 都没的话，就默认发到作者的网络记事本上
+        push2somewhere = config.author_webnote + netstr
+        io4push.write(push2somewhere, all_stored)
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"push done. "
+                                                                    f"please visit {push2somewhere}\n"
+                                                                    f"推送完成，访问上面网址查看")
 
     # 制作对话内的键盘，第一个是专门的结构，第二个函数是将这个结构转成
     inline_kb = [
@@ -522,6 +532,8 @@ async def reload_config(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
     if user_id in config.manage_id:
         config.reload()
+        await context.bot.send_message(chat_id=update.effective_chat.id,
+                                       text="success to reload config")
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id,
                                        text="You are not authorized to execute this command")

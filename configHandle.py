@@ -14,6 +14,7 @@ class Config(object):
         self.configs_path = os.path.abspath(configs_path)
         self.reload()
 
+        self.author_webnote = "https://forward.vfly2.eu.org/"
         # 指定 JSON 文件路径
         self.json_file = 'path_dict.json'
         self.store_dir = './forward_message/'  # 存储 转存（forward）消息 的目录
@@ -50,8 +51,8 @@ class Config(object):
         self.is_production = configs['is_production']
         self.chat_id = configs['chat_id']
         self.bot_token = configs['bot_token']
-        self.push_dir = configs['push_dir']   # 转发目录
-        self.domain = configs['domain']   # 查看转存内容的网址的域名
+        self.push_dir = configs.get('push_dir')   # 转发目录
+        self.domain = configs.get('domain')   # 查看转存内容的网址的域名
         self.netstr = configs.get('path')
         self.command2exec = configs.get('exec')   # 在发送 \push 指令后，执行一个命令，设计用于自定义推送，比如 curl 到 webnote
         self.manage_id = [self.chat_id, 1111111111]  # 管理员 id，放的是数字

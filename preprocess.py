@@ -19,7 +19,7 @@ configfile = args.config
 config = Config(configfile)
 
 io4message = LocalReadWrite()
-io4push = WebnoteReadWrite(config.domain)
+io4push = WebnoteReadWrite()
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

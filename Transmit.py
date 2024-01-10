@@ -64,12 +64,8 @@ class LocalReadWrite:
 
 class WebnoteReadWrite:
     """读取和提交到 webnote"""
-    def __init__(self, domain):
-        self.domain = domain
-
-    def read(self, path):
+    def read(self, url):
         """提取原本的数据"""
-        url = self.domain + path
         old = ""
         response = requests.get(url, verify=False)
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -78,20 +74,19 @@ class WebnoteReadWrite:
             old = textarea.text
         return old
 
-    def write(self, content):
+    def write(self, url, content):
         """把数据提交上去"""
-        url = self.domain + path
         data = {"text": content}
         requests.post(url, data=data, verify=False)
 
-    def write_behind(self, content):
+    def write_behind(self, url, content):
         """把数据提交上去"""
-        old = self.read()
+        old = self.read(url)
         old += content
-        self.write(old)
+        self.write(url, old)
 
-    def write_in_front(self, content):
+    def write_in_front(self, url, content):
         """把文本添加到 webnote 里，添加在开头，先读取，再提交"""
-        old = self.read()
+        old = self.read(url)
         content += old
-        self.write(content)
+        self.write(url, content)
