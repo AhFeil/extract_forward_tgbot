@@ -63,9 +63,4 @@ class Config(object):
 
         # 对文件处理的一些参数
         self.process_file = configs.get('process_file', {})
-        self.only_url_channel = self.process_file.get('gif_max_width', 300)   # self.only_url_channel = self.special_channel.get('only_url', {})  # 应用特殊提取规则的频道
-        self.image_channel = self.special_channel.get('image', {})  # 对里面的频道应用特殊提取规则，也就是会考虑图片
-
-        # 对文件处理的一些参数
-        self.process_file = configs.get('process_file', {})
         self.gif_max_width = self.process_file.get('gif_max_width', 300)   # gif 最大的宽默认取 300 像素

@@ -202,6 +202,11 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     user_id = update.effective_chat.id
     userid_str = str(user_id)
+
+    # 都是 作为 key，合成图片的参数
+    userid_time_str = userid_str + "_time"
+    userid_array_str = userid_str + "_array"
+    userid_text_str = userid_str + "_text"
     args = context.args   # 字符串列表
     if args:   # 若存在参数，则不执行 if 代码块下面的内容
         if args[0] == "array":
@@ -215,28 +220,35 @@ async def image_get(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.send_message(chat_id=update.effective_chat.id,
                                                text=f"notice blank,brackets , 别有空格，注意括号成对")
             else:
-                userid_array_str = userid_str + "_array"
                 config.image_option[userid_array_str] = actual_tuple
                 await context.bot.send_message(chat_id=update.effective_chat.id,
-                                               text=f"have change array to {config.image_option[userid_array_str]}")
-
+                                               text=f"have change array to {actual_tuple}")
         elif args[0] == "time":
-            # 第一个参数若是 time，代表第二个参数是 gif 的每个图片持续时间
-            pass
+            # 第一个参数若是 time，代表第二个参数是 gif 的每个图片持续时间，单位 s
+            try:
+                actual_duration = ast.literal_eval(args[1])
+            except ValueError:
+                await context.bot.send_message(chat_id=update.effective_chat.id,
+                                               text=f"wrong float format, 可以是整数或带小数点的")
+            else:
+                if not isinstance(actual_duration, (float, int)):
+                    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"not float or int, 输入整数或带小数点的")
+                else:
+                    config.image_option[userid_time_str] = actual_duration
+                    await context.bot.send_message(chat_id=update.effective_chat.id,
+                                                text=f"have change time to {actual_duration}")
         else:
             # 其他任何情况，都只是作为修改说明文字
-            userid_text_str = userid_str + "_text"
             text_in_args = args[0]
             config.image_list[userid_text_str] = text_in_args
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f"have change text to {text_in_args}")
         return
 
     # 不带参数则进行合成图片步骤
-    userid_text_str = userid_str + "_text"
-    userid_array_str = userid_str + "_array"
-    duration_time = 3000   # 3s
+    duration_time = int(config.image_option.get(userid_time_str, 3) * 1000)   # duration_time = 3000   # 默认 3s
     middle_interval = 10   # 10 个像素
-    text = config.image_list.get(userid_text_str, "text_of_processed_image")
+    random_str = ''.join(random.sample(string.ascii_letters + string.digits, 6))
+    text = config.image_list.get(userid_text_str, "processed_image" + random_str)
     image_name = text[0:24]   # 以免说明文字太长
     urls_cache = config.urls_cache_dict
 
@@ -445,7 +457,6 @@ async def earliest_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                         f'Here is the earliest message you saved at {first_date}\n'
                                         f'保存消息的数量为 {msg_count}，保存网址的数量为 {url_count}。\n'
                                         f'最早的消息是：')
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=first_message)
 
 
 # 删除最新添加的一条会返回文本，可以实现外显链接，
