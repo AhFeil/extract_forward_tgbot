@@ -60,7 +60,7 @@
 「简单说」--> 发送图片给转发机器人，然后发送指令 `/image`，就能得到返回的图片了。
 
 1. 如何向队列里添加图片
-    - **从指定频道转发消息**，消息中的图片会放入队列。[t.me/extract_forward_bot](https://t.me/extract_forward_bot) 目前的指定频道仅有：沙雕墙
+    - **从指定频道转发消息**，消息中的图片会放入队列。[t.me/extract_forward_bot](https://t.me/extract_forward_bot) 目前的指定频道仅有：沙雕墙、沙雕墙速食
     - **主动向机器人发送图片**，也会被保存到图片队列里，只支持以 photo 形式发送（手机默认以 photo 发送，image 形式实质是 file 文件）。
 2. 合成规则
     - 若只有一张图片，则返回加上说明文字的图，文字在原图下侧
@@ -125,53 +125,79 @@
 
 ## 自部署流程
 
-**新版本有大更新，下面的已经过时，还没更新**
 
-需要先部署 [网页记事本](https://github.com/pereorga/minimalist-web-notepad) ，且假设其 `_tmp` 目录位于 `/var/www/webnote/_tmp/` 。
+创建安装目录
 
-在工作目录下，拉取
 ```sh
-git clone https://github.com/AhFeil/extract_forward_tgbot.git && \
-cd extract_forward_tgbot && mkdir backup forward_message # 创建备份目录和保存目录
+myserve="ef_tgbot"
+mkdir -p ~/myserve/$myserve && cd ~/myserve/$myserve && mkdir -p backup forward_message configs
 ```
 
-安装环境和依赖（ Python versions 3.8+ ）
+**编辑**下面的配置文件，然后复制一键即可保存到机器上
+
+```yaml
+cat > configs/config.yaml << EOF
+is_production: true
+chat_id: 2066666604   # 你的 tg 用户 ID，会作为管理员
+bot_token: 5366666619:AAGG3rvfly2comtechniqueTIzc8y5z2pY9xmY
+push_dir: https://forward.vfly2.eu.org/   # 推送路径，最简安装就是选择一个网络记事本的网址，这里使用我搭建的
+
+# 下面的每一个都可以省略
+special_channel: 
+  image: [woshadiao, shadiao_refuse]   # 转发这里的频道的消息给机器人，机器人会接收视频和图片
+
+process_file:
+  gif_max_width: 300   # 视频转的 GIF 的最大宽度
+  video_max_size: 25   # 超过这个大小的视频不接收，单位是 MB
+EOF
+```
+
+
+```yml
+cat > docker-compose.yml << EOF
+---
+
+version: "3"
+
+services:
+  tgbot:
+    image: ahfeil/extract_forward_tgbot:latest
+    container_name: efTGbot
+    restart: always
+    volumes:
+      - ./configs:/ef_tgbot/configs
+      - ./backup:/ef_tgbot/backup
+      - ./forward_message:/ef_tgbot/forward_message
+EOF
+```
+
+拉取镜像
+
 ```sh
-sudo apt install python3 python3-pip # curl
-pip3 install -r requirements.txt
+docker compose pull
 ```
 
-运行（假设工作目录为 ~）
+启动机器人
+
 ```sh
-/usr/bin/python3 ~/extract_forward_tgbot/extract_forward_tgbot.py \
---chat_id 2111111114 \
---bot_token 6111111110:AAxxxxxvfly2xxxx9iGxxLa_atxxcomxuNU \
---push_dir /var/www/webnote/_tmp/ \
---domain https://forward.vfly.app/ \
---path push_from_tg
-# --exec "curl --data-urlencode text@{contentfile} https://forward.vfly.app/try"
+docker compose up -d
 ```
 
-这里，
-- chat_id，是管理员的用户 id，目前也只有停止运行一种独有指令
-- bot_token，机器人的 token
-- push_dir，推送时，将存储的信息保存到，这个目录下的文件中
-- domain，网页记事本的网址部分
-- path，网页记事本的路径部分。如上面的例子，最终推送网页的地址是 [https://forward.vfly.app/push_from_tg](https://forward.vfly.app/push_from_tg) 。
-- exec，在发送 \push 指令后，执行一个命令，设计用于自定义推送，比如 curl 到 webnote。 {contentfile} 是存储转存内容的文本文件。
+如果有问题，用这个查看日志
 
-> 目前，如果提供了 exec 参数，转存内容会保存到文件中，但随后就会被删除，也就是 path, domain, push_dir 失去效果，但依然要填写，且 push_dir 要是能访问的路径
-
-相关代码如下，如果您有更好的方案，请不吝赐教。
-```python
-import subprocess
-# command2exec 为 --exec 后的参数， datafile 是文件路径，储存要转存的内容。
-def exec_command(command2exec, datafile):
-    actual_command = command2exec.format(contentfile=datafile)
-    subprocess.call(actual_command, shell=True)
+```sh
+docker logs efTGbot
 ```
 
-详细流程，参考 [Telegram 转发机器人的部署流程](https://technique.vfly2.com/2023/08/deployment-process-extract_forward_tgbot/)。
+关闭机器人
+
+```sh
+docker compose down
+```
+
+
+
+上面仅是最简安装步骤，完整说明参考 [Telegram 转发机器人的部署流程](https://technique.vfly2.com/2023/08/deployment-process-extract_forward_tgbot/)。
 
 
 ---
