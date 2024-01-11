@@ -92,7 +92,7 @@ async def video2gif114tg(video_dir_list: list, temp_store: str, resolution: tupl
     """
     返回字节流 gif_io = io.BytesIO()
     """
-    temp_gif_path = "output.gif"
+    temp_gif_path = os.path.join(temp_store, "output.gif")
     video_local_path = await save_video_from_various(video_dir_list, temp_store)
     video_local_path = video_local_path[0]   # 目前只考虑，列表里只有一个视频
 
