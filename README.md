@@ -115,6 +115,7 @@
 ### 隐藏命令
 
 1. `/clear`：清除保存的所有消息。在 push 后会提示是否删除，因此这个命令一般用不到
+2. `/reload`：重载参数，管理员命令。在你更改了 `config.yaml` 之后，不需要重启机器人，发送这个命令即可
 2. `/shutdown`：关闭机器人，管理员命令
 
 
@@ -123,8 +124,9 @@
 
 
 
-## 自部署流程
+## 自建步骤
 
+> 可为多个账号提供服务
 
 创建安装目录
 
@@ -135,12 +137,15 @@ mkdir -p ~/myserve/$myserve && cd ~/myserve/$myserve && mkdir -p backup forward_
 
 **编辑**下面的配置文件，然后复制一键即可保存到机器上
 
+> 没有机器人、不知道从哪看 chat_id？：[Telegram-Bot 的注册和使用 Python 编写 机器人 - 技焉洲 (vfly2.com)](https://technique.vfly2.com/2023/08/register-telegram-bot-and-build-a-bot-using-python/)
+
+
 ```yaml
 cat > configs/config.yaml << EOF
 is_production: true
 chat_id: 2066666604   # 你的 tg 用户 ID，会作为管理员
 bot_token: 5366666619:AAGG3rvfly2comtechniqueTIzc8y5z2pY9xmY
-push_dir: https://forward.vfly2.eu.org/   # 推送路径，最简安装就是选择一个网络记事本的网址，这里使用我搭建的
+push_dir: https://forward.vfly2.eu.org/   # 推送路径，最简安装这里选择一个网络记事本的网址，这里使用我搭建的
 
 # 下面的每一个都可以省略
 special_channel: 
@@ -152,6 +157,7 @@ process_file:
 EOF
 ```
 
+复制一键保存 `docker-compose.yml` 到机器上
 
 ```yml
 cat > docker-compose.yml << EOF
