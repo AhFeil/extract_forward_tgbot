@@ -57,6 +57,7 @@ class Config(object):
         self.command2exec = configs.get('exec')   # 在发送 \push 指令后，执行一个命令，设计用于自定义推送，比如 curl 到 webnote
         self.manage_id = [self.chat_id, 1111111111]  # 管理员 id，放的是数字
 
+        self.bot_username = configs.get('bot_username', '')
         # 有特殊规则的频道
         self.special_channel = configs.get('special_channel', {})
         self.only_url_channel = self.special_channel.get('only_url', {})  # 应用特殊提取规则的频道

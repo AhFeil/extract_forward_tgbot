@@ -154,12 +154,13 @@ async def transfer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # 从哪里转发的
     from_where = message.forward_from_chat.title if message.forward_from_chat else "yourself"
     from_where_username = message.forward_from_chat.username if message.forward_from_chat else "yourself"
+    from_where_bot = True if message.forward_from and message.forward_from.username == config.bot_username else False   # 若消息转发自机器人自己发送的，则为 True
     message_id = message.forward_from_message_id if message.forward_from_chat else "no"
     direct_url = "so can not being accessed directly" if from_where == "yourself" else f"  https://t.me/{from_where_username}/{message_id}"
     line_center_content = rec_time + " from " + from_where + direct_url
 
     bot = Bot(token=config.bot_token)   # 用于得到文件 URL
-    if from_where == "yourself":   # 自己发的，肯定是文字就是文字，图片就是图片，有就代表要用那方面的功能，不需要再判断
+    if from_where == "yourself" or from_where_bot:   # 自己发的，肯定是文字就是文字，图片就是图片，有就代表要用那方面的功能，不需要再判断
         if message.photo:   # 如果发送的是图片
             save_data_of_photos(message, userid_str)
         elif message.video:   # 如果发送的是视频
