@@ -62,6 +62,7 @@
 1. 如何向队列里添加图片
     - **从指定频道转发消息**，消息中的图片会放入队列。[t.me/extract_forward_bot](https://t.me/extract_forward_bot) 目前的指定频道仅有：沙雕墙、沙雕墙速食
     - **主动向机器人发送图片**，也会被保存到图片队列里，只支持以 photo 形式发送（手机默认以 photo 发送，image 形式实质是 file 文件）。
+    - 机器人发送的消息转发给机器人，会被视作用户直接发的，这样方便对机器人生成的内容再处理，比如多步合图
 2. 合成规则
     - 若只有一张图片，则返回加上说明文字的图，文字在原图下侧
     - 二到四张，返回拼接在一起的图
@@ -156,6 +157,8 @@ process_file:
   video_max_size: 25   # 超过这个大小的视频不接收，单位是 MB
 EOF
 ```
+
+![woshadiao_channel_cpd.webp](https://ib.ahfei.blog:443/imagesbed/woshadiao_channel_cpd-24-01-29.webp)
 
 复制一键保存 `docker-compose.yml` 到机器上
 
