@@ -1,6 +1,6 @@
-LABEL org.opencontainers.image.source=https://github.com/ahfeil/extract_forward_tgbot
-
 FROM python:alpine
+
+LABEL org.opencontainers.image.source=https://github.com/ahfeil/extract_forward_tgbot
 
 ENV PYTHONUNBUFFERED 1
 
